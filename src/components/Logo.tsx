@@ -23,14 +23,18 @@ export const Logo: React.FC<LogoProps> = ({
     <div className={`flex items-center select-none ${className}`}>
       {/* Official golden template logo requested by user */}
       <img
-        src="/src/assets/images/Logotipo Dourado Advocacia Nicolau (1).png"
+        src="/logo_nicolau_dourado.webp"
         alt="Advocacia Nicolau - Desde 1978"
         className={`${heightClasses} w-auto object-contain filter drop-shadow-md`}
+        loading="eager"
+        decoding="async"
         onError={(e) => {
-          // Fallback to static public logo copy
+          // Fallback to static png logo copy
           const target = e.currentTarget;
-          if (target.src.includes('Logotipo%20Dourado') || target.src.includes('Logotipo Dourado')) {
+          if (target.src.endsWith('.webp')) {
             target.src = '/logo_nicolau_dourado.png';
+          } else {
+            target.src = '/src/assets/images/Logotipo Dourado Advocacia Nicolau (1).png';
           }
         }}
       />

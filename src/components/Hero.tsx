@@ -42,9 +42,16 @@ export const Hero: React.FC<HeroProps> = ({
       {/* Background Image: Deusa Têmis e Biblioteca Jurídica */}
       <div className="absolute inset-0 z-0">
         <img
-          src="/src/assets/images/4a48d6bf-68bb-412f-a222-e15eb6adb959.png"
+          src="/hero_justice_bg.webp"
           alt="Deusa Têmis e Biblioteca Jurídica - Advocacia Nicolau"
           className="w-full h-full object-cover object-[82%_center] sm:object-right lg:object-center filter brightness-[0.86] sm:brightness-[0.95] contrast-[1.05]"
+          loading="eager"
+          decoding="sync"
+          fetchPriority="high"
+          onError={(e) => {
+            const target = e.currentTarget;
+            target.src = '/src/assets/images/4a48d6bf-68bb-412f-a222-e15eb6adb959.png';
+          }}
           referrerPolicy="no-referrer"
         />
 

@@ -145,9 +145,15 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
       <section className="relative py-16 sm:py-24 bg-white text-[#17130F] border-b border-[#8C6F36]/20 overflow-hidden">
         <div className="absolute inset-0 opacity-[0.06] pointer-events-none mix-blend-multiply">
           <img
-            src="/src/assets/images/office_facade_nicolau_1794270160258.jpg"
+            src="/office_facade_nicolau.webp"
             alt=""
             className="w-full h-full object-cover filter contrast-125"
+            loading="lazy"
+            decoding="async"
+            onError={(e) => {
+              const target = e.currentTarget;
+              target.src = '/src/assets/images/office_facade_nicolau_1794270160258.jpg';
+            }}
           />
         </div>
 
@@ -252,9 +258,11 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
                     src={item.image}
                     alt={item.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 filter brightness-95"
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       const target = e.currentTarget;
-                      target.src = '/team_juri.jpg';
+                      target.src = '/team_juri.webp';
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#231B15] via-black/40 to-transparent" />

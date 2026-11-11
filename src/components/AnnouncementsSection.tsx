@@ -64,9 +64,11 @@ export const AnnouncementsSection: React.FC<AnnouncementsSectionProps> = ({
                 src={item.image}
                 alt={item.title}
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
+                loading="lazy"
+                decoding="async"
                 onError={(e) => {
                   const target = e.currentTarget;
-                  target.src = '/team_juri.jpg';
+                  target.src = '/team_juri.webp';
                 }}
               />
 

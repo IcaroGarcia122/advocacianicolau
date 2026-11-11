@@ -185,12 +185,14 @@ export const TechnicalProductionPage: React.FC<TechnicalProductionPageProps> = (
         {/* Subtle Watermark */}
         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1/2 h-full opacity-[0.06] pointer-events-none flex justify-end items-center overflow-hidden">
           <img
-            src="/logo_nicolau_dourado.png"
+            src="/logo_nicolau_dourado.webp"
             alt=""
             className="w-[36rem] h-auto object-contain translate-x-1/4 filter contrast-125"
+            loading="lazy"
+            decoding="async"
             onError={(e) => {
               const target = e.currentTarget;
-              target.src = '/src/assets/images/Logotipo Dourado Advocacia Nicolau (1).png';
+              target.src = '/logo_nicolau_dourado.png';
             }}
           />
         </div>
@@ -303,6 +305,12 @@ export const TechnicalProductionPage: React.FC<TechnicalProductionPageProps> = (
                     src={article.image}
                     alt={article.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 filter brightness-95"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.src = '/hero_justice_themis.webp';
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#1D1713] via-transparent to-black/20" />
                   <span

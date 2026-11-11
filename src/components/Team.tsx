@@ -21,12 +21,14 @@ export const Team: React.FC<TeamProps> = ({
       {/* Desktop Only: Full-bleed team photo on the RIGHT with subtle gradient overlay */}
       <div className="hidden lg:block absolute inset-y-0 right-0 w-[50%] xl:w-[53%] z-0 overflow-hidden pointer-events-none">
         <img
-          src="/team_congresso.jpg"
+          src="/team_congresso.webp"
           alt="Advogados da Advocacia Nicolau"
           className="w-full h-full object-cover object-[center_10%] -translate-y-4 sm:-translate-y-6 lg:-translate-y-8 scale-105 filter brightness-[0.98] contrast-[1.04]"
+          loading="lazy"
+          decoding="async"
           onError={(e) => {
             const target = e.currentTarget;
-            target.src = '/src/assets/images/advocacia.nicolau_No_dia_de_hoje,_os_advogados_integrantes_do_escritório_de_Ad_2025-08-07_DNEZZJex4if_369_DNEZZJex4if_01.jpg';
+            target.src = '/team_congresso.jpg';
           }}
         />
         {/* Soft gradient on the left edge to smoothly fade into white */}
@@ -117,12 +119,14 @@ export const Team: React.FC<TeamProps> = ({
               <div className="relative rounded-2xl p-2 bg-gradient-to-br from-[#EAD9BA] via-[#D6B779] to-[#8C6F36] shadow-xl">
                 <div className="relative rounded-xl overflow-hidden aspect-[16/10] bg-[#17130F]">
                   <img
-                    src="/team_congresso.jpg"
+                    src="/team_congresso.webp"
                     alt="Advogados da Advocacia Nicolau"
                     className="w-full h-full object-cover object-[center_12%]"
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       const target = e.currentTarget;
-                      target.src = '/src/assets/images/advocacia.nicolau_No_dia_de_hoje,_os_advogados_integrantes_do_escritório_de_Ad_2025-08-07_DNEZZJex4if_369_DNEZZJex4if_01.jpg';
+                      target.src = '/team_congresso.jpg';
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />

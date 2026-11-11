@@ -120,14 +120,14 @@ const ImageAttachmentPicker: React.FC<ImageAttachmentPickerProps> = ({
   };
 
   const officePresets = [
-    { label: 'Júri', path: '/team_juri.jpg' },
-    { label: 'Congresso', path: '/team_congresso.jpg' },
-    { label: 'Balança', path: '/balanca_livros.png' },
-    { label: 'Fachada', path: '/src/assets/images/office_facade_nicolau_1794270160258.jpg' },
-    { label: 'Têmis', path: '/src/assets/images/4a48d6bf-68bb-412f-a222-e15eb6adb959.png' },
-    { label: 'Dr. Miguel', path: '/src/assets/images/lawyer_miguel_nicolau_1794270160018.jpg' },
-    { label: 'Dra. Elizanne', path: '/src/assets/images/lawyer_elizanne_soares_1794270161852.jpg' },
-    { label: 'Dr. Felipe', path: '/src/assets/images/lawyer_felipe_bahls_1794270162719.jpg' },
+    { label: 'Júri', path: '/team_juri.webp' },
+    { label: 'Congresso', path: '/team_congresso.webp' },
+    { label: 'Balança', path: '/balanca_livros.webp' },
+    { label: 'Fachada', path: '/office_facade_nicolau.webp' },
+    { label: 'Têmis', path: '/hero_justice_bg.webp' },
+    { label: 'Dr. Miguel', path: '/lawyer_miguel_nicolau.webp' },
+    { label: 'Dra. Elizanne', path: '/lawyer_elizanne_soares.webp' },
+    { label: 'Dr. Felipe', path: '/lawyer_felipe_bahls.webp' },
   ];
 
   return (
