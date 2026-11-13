@@ -11,6 +11,9 @@ import {
   saveStoredArticles,
   getStoredLawyers,
   saveStoredLawyers,
+  AnnouncementItem,
+  getStoredAnnouncements,
+  saveStoredAnnouncements,
 } from './data/officeData';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -51,6 +54,7 @@ export default function App() {
   const [heroSettings, setHeroSettings] = useState<HeroSettings>(() => getStoredHeroSettings());
   const [articlesList, setArticlesList] = useState<Article[]>(() => getStoredArticles());
   const [lawyersList, setLawyersList] = useState<Lawyer[]>(() => getStoredLawyers());
+  const [announcementsList, setAnnouncementsList] = useState<AnnouncementItem[]>(() => getStoredAnnouncements());
 
   const [activeSection, setActiveSection] = useState<string>('inicio');
   const [preselectedArea, setPreselectedArea] = useState<string>('');
@@ -137,7 +141,7 @@ export default function App() {
     revealVisible();
 
     return () => observer.disconnect();
-  }, [currentView]);
+  }, [currentView, announcementsList]);
 
   const scrollToSection = (id: string) => {
     if (currentView !== 'institutional') {
@@ -206,6 +210,11 @@ export default function App() {
     saveStoredLawyers(updated);
   };
 
+  const handleUpdateAnnouncements = (updated: AnnouncementItem[]): boolean => {
+    setAnnouncementsList(updated);
+    return saveStoredAnnouncements(updated);
+  };
+
   const handleScheduleWithLawyer = (lawyerName: string) => {
     setPreselectedLawyer(lawyerName);
     scrollToSection('contato');
@@ -232,10 +241,12 @@ export default function App() {
         heroSettings={heroSettings}
         articlesList={articlesList}
         lawyersList={lawyersList}
+        announcementsList={announcementsList}
         onUpdateContactInfo={handleUpdateContactInfo}
         onUpdateHeroSettings={handleUpdateHeroSettings}
         onUpdateArticles={handleUpdateArticles}
         onUpdateLawyers={handleUpdateLawyers}
+        onUpdateAnnouncements={handleUpdateAnnouncements}
         onExit={handleBackToInstitutional}
       />
     );
@@ -270,6 +281,7 @@ export default function App() {
     return (
       <AnnouncementsPage
         contactInfo={contactInfo}
+        announcementsList={announcementsList}
         onBackToHome={handleBackToInstitutional}
         onOpenAdmin={handleOpenAdmin}
       />
@@ -321,10 +333,11 @@ export default function App() {
           />
         </div>
 
-        {/* 5. Comunicados & Notas Oficiais (Fifth session: 6 official announcements & link to dedicated page) */}
+        {/* 5. Comunicados & Notas Oficiais (Fifth session: featured official announcements & link to dedicated page) */}
         <div className="reveal-on-scroll">
           <AnnouncementsSection
             contactInfo={contactInfo}
+            announcementsList={announcementsList}
             onOpenAnnouncementsPage={handleOpenAnnouncementsPage}
           />
         </div>

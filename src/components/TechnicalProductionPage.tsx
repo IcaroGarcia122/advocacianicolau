@@ -93,18 +93,29 @@ export const TechnicalProductionPage: React.FC<TechnicalProductionPageProps> = (
   }, [currentArticles, selectedCategory, searchQuery]);
 
   React.useEffect(() => {
+    const elements = Array.from(document.querySelectorAll('.reveal-on-scroll'));
+    const revealVisible = () => {
+      elements.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight + 80) {
+          el.classList.add('is-revealed');
+        }
+      });
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('is-revealed');
+            observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.08 }
+      { threshold: 0.01, rootMargin: '60px 0px 0px 0px' }
     );
-    const elements = document.querySelectorAll('.reveal-on-scroll');
     elements.forEach((el) => observer.observe(el));
+    revealVisible();
     return () => observer.disconnect();
   }, [filteredArticles]);
 

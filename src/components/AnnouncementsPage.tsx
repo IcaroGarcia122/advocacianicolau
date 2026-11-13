@@ -14,7 +14,7 @@ import {
   BellRing,
   Filter,
 } from 'lucide-react';
-import { initialAnnouncements, AnnouncementItem, ContactInfo } from '../data/officeData';
+import { getStoredAnnouncements, AnnouncementItem, ContactInfo } from '../data/officeData';
 import { Logo } from './Logo';
 
 interface AnnouncementsPageProps {
@@ -36,7 +36,7 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const items = announcementsList && announcementsList.length > 0 ? announcementsList : initialAnnouncements;
+  const items = announcementsList ?? getStoredAnnouncements();
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -58,18 +58,29 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
   }, [items, selectedCategory, searchQuery]);
 
   React.useEffect(() => {
+    const elements = Array.from(document.querySelectorAll('.reveal-on-scroll'));
+    const revealVisible = () => {
+      elements.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight + 80) {
+          el.classList.add('is-revealed');
+        }
+      });
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('is-revealed');
+            observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.08 }
+      { threshold: 0.01, rootMargin: '60px 0px 0px 0px' }
     );
-    const elements = document.querySelectorAll('.reveal-on-scroll');
     elements.forEach((el) => observer.observe(el));
+    revealVisible();
     return () => observer.disconnect();
   }, [filteredItems]);
 
@@ -361,7 +372,7 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.currentTarget;
-                      target.src = '/team_juri.jpg';
+                      target.src = '/team_juri.webp';
                     }}
                   />
                 </div>

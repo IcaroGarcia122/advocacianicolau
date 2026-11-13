@@ -1,69 +1,26 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Calendar, Share2, Check, ArrowRight, MessageSquare } from 'lucide-react';
-import { ContactInfo, initialContactInfo } from '../data/officeData';
-
-interface DestaqueItem {
-  id: string;
-  tag: string;
-  title: string;
-  date: string;
-  image: string;
-  subtitle: string;
-  content: string[];
-}
+import {
+  ContactInfo,
+  getStoredHighlights,
+  HighlightItem,
+  initialContactInfo,
+} from '../data/officeData';
 
 interface HighlightsSectionProps {
   contactInfo?: ContactInfo;
+  highlightsList?: HighlightItem[];
 }
 
 export const HighlightsSection: React.FC<HighlightsSectionProps> = ({
   contactInfo = initialContactInfo,
+  highlightsList,
 }) => {
-  const [selectedItem, setSelectedItem] = useState<DestaqueItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<HighlightItem | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const destaques: DestaqueItem[] = [
-    {
-      id: 'isis',
-      tag: 'Notícias',
-      title: 'Caso Isis: Justiça Aceita Denúncia E Vigilante Vira Réu: “Irá A Julgamento”, Diz Dalledone',
-      date: 'Novembro de 2026',
-      image: '/destaque_isis.webp',
-      subtitle: 'Tribunal do Júri e atuação técnica em caso de repercussão estadual.',
-      content: [
-        'A denúncia criminal foi aceita pelo Poder Judiciário, determinando o encaminhamento dos autos para a fase de instrução e futuro julgamento pelo Tribunal do Júri.',
-        'A defesa técnica reafirma que todas as provas periciais e testemunhais serão minuciosamente examinadas sob o prisma do devido processo legal e das garantias constitucionais da ampla defesa.',
-        'Nossa atuação em processos de júri segue rigorosamente os mais altos padrões de técnica forense, análise de perícia e proteção aos preceitos da advocacia criminal combativa.'
-      ],
-    },
-    {
-      id: 'dranka',
-      tag: 'Notícias',
-      title: '“Perdi Meu Amigo E Arruinaram Minha Vida Com Uma Falsa Acusação ”, Desabafa Gilberto Dranka',
-      date: 'Outubro de 2026',
-      image: '/destaque_dranka.webp',
-      subtitle: 'Comprovação da inocência e combate a imputações falsas no processo penal.',
-      content: [
-        'Em declaração pública e perante os autos, demonstrou-se a inconsistência material das imputações acusatórias que levaram à responsabilização indevida do acusado.',
-        'A defesa produziu provas documentais e periciais contundentes evidenciando a ausência de dolo e a improcedência das alegações formuladas pela acusação.',
-        'O escritório de advocacia mantém seu firme compromisso de combater acusações precipitadas e restabelecer a honra, a liberdade e a dignidade das pessoas submetidas a equívocos da persecução criminal.'
-      ],
-    },
-    {
-      id: 'sotero',
-      tag: 'Notícias',
-      title: 'Delegado Gustavo Sotero Diz Que É Um Homem Da Lei E Que Apenas Se Defendeu',
-      date: 'Setembro de 2026',
-      image: '/destaque_sotero.webp',
-      subtitle: 'Defesa baseada na legítima defesa e estrita observância das provas periciais balísticas.',
-      content: [
-        'A tese de legítima defesa real foi sustentada com base no conjunto pericial, reconstrução topográfica dos disparos e testemunhos colhidos durante a instrução probatória.',
-        'A advocacia combativa atuou na demonstração técnica da dinâmica dos fatos, delimitando o contexto de perigo iminente e a moderação indispensável aos meios empregados.',
-        'A atuação da banca perante o plenário do júri pauta-se pelo rigor metodológico, oratória estruturada e respeito aos jurados e à justiça paranaense e nacional.'
-      ],
-    },
-  ];
+  const destaques = (highlightsList ?? getStoredHighlights()).slice(0, 3);
 
   const handleShare = () => {
     navigator.clipboard?.writeText(window.location.href);
@@ -127,7 +84,7 @@ export const HighlightsSection: React.FC<HighlightsSectionProps> = ({
               {/* Modal Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#B89554]/30 bg-[#14100D]">
                 <span className="inline-block px-3 py-1 bg-[#967444] text-[#FAF8F4] text-xs font-medium rounded-full">
-                  {selectedItem.tag}
+                  {selectedItem.tagLabel}
                 </span>
 
                 <div className="flex items-center gap-3">

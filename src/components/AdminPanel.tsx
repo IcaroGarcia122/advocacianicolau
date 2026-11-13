@@ -37,6 +37,9 @@ import {
   Image as ImageIcon,
   Menu,
   Camera,
+  ArrowLeftRight,
+  Star,
+  EyeOff,
 } from 'lucide-react';
 import {
   Article,
@@ -51,8 +54,6 @@ import {
   getStoredHighlights,
   saveStoredHighlights,
   AnnouncementItem,
-  getStoredAnnouncements,
-  saveStoredAnnouncements,
   ClientLead,
   getStoredClientLeads,
   saveStoredClientLeads,
@@ -67,10 +68,12 @@ interface AdminPanelProps {
   heroSettings: HeroSettings;
   articlesList: Article[];
   lawyersList: Lawyer[];
+  announcementsList: AnnouncementItem[];
   onUpdateContactInfo: (updated: ContactInfo) => void;
   onUpdateHeroSettings: (updated: HeroSettings) => void;
   onUpdateArticles: (updated: Article[]) => void;
   onUpdateLawyers: (updated: Lawyer[]) => void;
+  onUpdateAnnouncements: (updated: AnnouncementItem[]) => boolean | void;
   onExit: () => void;
 }
 
@@ -100,22 +103,70 @@ const ImageAttachmentPicker: React.FC<ImageAttachmentPickerProps> = ({
   helperText = 'Anexe uma foto do seu dispositivo (celular/computador) ou escolha das imagens do escritório.',
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [isOptimizingImage, setIsOptimizingImage] = React.useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 8 * 1024 * 1024) {
-        alert('A imagem é muito grande. Escolha uma imagem de até 8MB.');
-        return;
-      }
+  const compressImageToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Falha ao ler o arquivo.'));
       reader.onload = (event) => {
-        const result = event.target?.result as string;
-        if (result) {
-          onChange(result);
+        const rawDataUrl = event.target?.result as string;
+        if (!rawDataUrl) {
+          reject(new Error('Arquivo vazio.'));
+          return;
         }
+        const img = new Image();
+        img.onerror = () => resolve(rawDataUrl);
+        img.onload = () => {
+          const maxDim = 1200;
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width >= height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(rawDataUrl);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const webpUrl = canvas.toDataURL('image/webp', 0.82);
+          if (webpUrl.startsWith('data:image/webp')) {
+            resolve(webpUrl);
+          } else {
+            resolve(canvas.toDataURL('image/jpeg', 0.82));
+          }
+        };
+        img.src = rawDataUrl;
       };
       reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 12 * 1024 * 1024) {
+      alert('A imagem é muito grande. Escolha uma imagem de até 12MB.');
+      return;
+    }
+    try {
+      setIsOptimizingImage(true);
+      const compressed = await compressImageToDataUrl(file);
+      onChange(compressed);
+    } catch {
+      alert('Não foi possível processar a imagem selecionada.');
+    } finally {
+      setIsOptimizingImage(false);
     }
   };
 
@@ -136,7 +187,9 @@ const ImageAttachmentPicker: React.FC<ImageAttachmentPickerProps> = ({
         <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold">
           {label}
         </label>
-        <span className="text-[11px] text-[#8C6F36] font-medium">Anexar ou Escolher</span>
+        <span className="text-[11px] text-[#8C6F36] font-medium">
+          {isOptimizingImage ? 'Otimizando imagem...' : 'Anexar ou Escolher'}
+        </span>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
@@ -148,7 +201,7 @@ const ImageAttachmentPicker: React.FC<ImageAttachmentPickerProps> = ({
               alt="Preview"
               className="w-full h-full object-cover"
               onError={(e) => {
-                e.currentTarget.src = '/team_juri.jpg';
+                e.currentTarget.src = '/team_juri.webp';
               }}
             />
           ) : (
@@ -231,10 +284,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   heroSettings,
   articlesList,
   lawyersList,
+  announcementsList,
   onUpdateContactInfo,
   onUpdateHeroSettings,
   onUpdateArticles,
   onUpdateLawyers,
+  onUpdateAnnouncements,
   onExit,
 }) => {
   // Authentication State
@@ -290,10 +345,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [highlights, setHighlights] = useState<HighlightItem[]>(() => getStoredHighlights());
   const [editingHighlight, setEditingHighlight] = useState<HighlightItem | null>(null);
 
-  // State: Announcements (Comunicados Oficiais)
-  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>(() => getStoredAnnouncements());
+  // State: Announcements (Comunicados Oficiais) controlled by App.tsx
+  const announcements = announcementsList;
   const [editingAnnouncement, setEditingAnnouncement] = useState<AnnouncementItem | null>(null);
   const [isNewAnnouncementModalOpen, setIsNewAnnouncementModalOpen] = useState(false);
+  const [swapTargetAnnouncement, setSwapTargetAnnouncement] = useState<AnnouncementItem | null>(null);
+  const [swapSearch, setSwapSearch] = useState('');
+  const [replacingFeaturedSlotId, setReplacingFeaturedSlotId] = useState<string | null>(null);
 
   // State: Corporate Page Settings
   const [corporateForm, setCorporateForm] = useState<CorporateSettings>(() => getStoredCorporateSettings());
@@ -324,7 +382,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     author: 'Advocacia Nicolau',
     readTime: '4 min de leitura',
     date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
-    image: '/team_juri.jpg',
+    image: '/team_juri.webp',
     contentRaw: '',
   });
 
@@ -348,7 +406,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       author: 'Advocacia Nicolau',
       readTime: '4 min de leitura',
       date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
-      image: '/team_juri.jpg',
+      image: '/team_juri.webp',
       contentRaw: '',
     });
     setIsArticleModalOpen(true);
@@ -386,7 +444,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       author: articleForm.author.trim() || 'Advocacia Nicolau',
       readTime: articleForm.readTime.trim() || '4 min de leitura',
       date: articleForm.date,
-      image: articleForm.image.trim() || '/team_juri.jpg',
+      image: articleForm.image.trim() || '/team_juri.webp',
       content: contentParagraphs.length > 0 ? contentParagraphs : [articleForm.description],
     };
 
@@ -432,19 +490,83 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     showToast('Destaque atualizado com sucesso!');
   };
 
-  // Handlers for Announcements
+  // Featured Announcements computed list (matches AnnouncementsSection on home page)
+  const featuredAnnouncements = React.useMemo(() => {
+    const flagged = announcements.filter((a) => a.featured === true);
+    return flagged.length > 0 ? flagged : announcements.slice(0, 6);
+  }, [announcements]);
+
+  const nonFeaturedAnnouncements = React.useMemo(() => {
+    const featuredIds = new Set(featuredAnnouncements.map((a) => a.id));
+    return announcements.filter((a) => !featuredIds.has(a.id));
+  }, [announcements, featuredAnnouncements]);
+
+  // Handlers for Announcements & Featured Highlights
+  const handleOpenNewAnnouncement = (featuredByDefault = true, replaceSlotId: string | null = null) => {
+    setReplacingFeaturedSlotId(replaceSlotId);
+    setEditingAnnouncement({
+      id: `com-${Date.now()}`,
+      tag: 'Nota Oficial',
+      title: '',
+      date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+      image: '/team_juri.webp',
+      excerpt: '',
+      content: [''],
+      featured: featuredByDefault,
+    });
+    setIsNewAnnouncementModalOpen(true);
+  };
+
   const handleSaveAnnouncement = (item: AnnouncementItem) => {
+    const cleanedContent = item.content.map((p) => p.trim()).filter((p) => p.length > 0);
+    const normalizedItem: AnnouncementItem = {
+      ...item,
+      title: item.title.trim(),
+      tag: item.tag.trim() || 'Nota Oficial',
+      date: item.date.trim() || new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+      image: item.image.trim() || '/team_juri.webp',
+      excerpt: item.excerpt.trim(),
+      content: cleanedContent.length > 0 ? cleanedContent : [item.excerpt.trim() || item.title.trim()],
+      featured: item.featured ?? true,
+    };
+
     let updated: AnnouncementItem[];
-    const exists = announcements.some((a) => a.id === item.id);
+    const exists = announcements.some((a) => a.id === normalizedItem.id);
     if (exists) {
-      updated = announcements.map((a) => (a.id === item.id ? item : a));
-      showToast('Comunicado atualizado!');
+      updated = announcements.map((a) => (a.id === normalizedItem.id ? normalizedItem : a));
+    } else if (replacingFeaturedSlotId) {
+      // Replace the chosen featured slot in exact position and unfeature the old one
+      const slotIndex = announcements.findIndex((a) => a.id === replacingFeaturedSlotId);
+      const unfeaturedList = announcements.map((a) =>
+        a.id === replacingFeaturedSlotId ? { ...a, featured: false } : a
+      );
+      if (slotIndex >= 0) {
+        updated = [
+          ...unfeaturedList.slice(0, slotIndex),
+          { ...normalizedItem, featured: true },
+          ...unfeaturedList.slice(slotIndex),
+        ];
+      } else {
+        updated = [{ ...normalizedItem, featured: true }, ...unfeaturedList];
+      }
     } else {
-      updated = [item, ...announcements];
-      showToast('Novo comunicado publicado!');
+      updated = [normalizedItem, ...announcements];
     }
-    setAnnouncements(updated);
-    saveStoredAnnouncements(updated);
+
+    const saved = onUpdateAnnouncements(updated);
+    if (saved === false) {
+      alert('Não foi possível salvar no navegador porque a imagem anexada excedeu o limite de espaço local. Tente uma imagem menor ou predefinida.');
+      return;
+    }
+
+    showToast(
+      exists
+        ? 'Comunicado atualizado com sucesso!'
+        : replacingFeaturedSlotId
+        ? 'Nova notícia publicada e colocada no destaque!'
+        : 'Novo comunicado publicado na Página de Comunicados!'
+    );
+    setReplacingFeaturedSlotId(null);
     setEditingAnnouncement(null);
     setIsNewAnnouncementModalOpen(false);
   };
@@ -452,10 +574,98 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const handleDeleteAnnouncement = (id: string) => {
     if (window.confirm('Excluir este comunicado oficial?')) {
       const updated = announcements.filter((a) => a.id !== id);
-      setAnnouncements(updated);
-      saveStoredAnnouncements(updated);
+      onUpdateAnnouncements(updated);
       showToast('Comunicado removido.');
     }
+  };
+
+  const handleToggleAnnouncementFeatured = (id: string) => {
+    const target = announcements.find((a) => a.id === id);
+    if (!target) return;
+    const nextFeatured = !target.featured;
+    const updated = announcements.map((a) => (a.id === id ? { ...a, featured: nextFeatured } : a));
+    onUpdateAnnouncements(updated);
+    showToast(
+      nextFeatured
+        ? 'Comunicado colocado em destaque na Página Principal!'
+        : 'Comunicado mantido apenas na Página de Comunicados.'
+    );
+  };
+
+  const handleSwapFeaturedWithAnnouncement = (oldId: string, replacementId: string) => {
+    const oldIdx = announcements.findIndex((a) => a.id === oldId);
+    const replacement = announcements.find((a) => a.id === replacementId);
+    if (oldIdx === -1 || !replacement) return;
+
+    const withoutReplacement = announcements
+      .filter((a) => a.id !== replacementId)
+      .map((a) => (a.id === oldId ? { ...a, featured: false } : a));
+
+    const targetInsertIndex = Math.min(oldIdx, withoutReplacement.length);
+    const updated = [
+      ...withoutReplacement.slice(0, targetInsertIndex),
+      { ...replacement, featured: true },
+      ...withoutReplacement.slice(targetInsertIndex),
+    ];
+
+    onUpdateAnnouncements(updated);
+    setSwapTargetAnnouncement(null);
+    setSwapSearch('');
+    showToast('Destaque trocado pela publicação selecionada!');
+  };
+
+  const handleSwapFeaturedWithArticle = (oldId: string, article: Article) => {
+    const existingConverted = announcements.find((a) => a.id === `art-dest-${article.id}`);
+    const newAnnouncementFromArticle: AnnouncementItem = existingConverted || {
+      id: `art-dest-${article.id}`,
+      tag: article.category,
+      title: article.title,
+      date: article.date,
+      image: article.image || '/team_juri.webp',
+      excerpt: article.description,
+      content: article.content,
+      featured: true,
+    };
+
+    const oldIdx = announcements.findIndex((a) => a.id === oldId);
+    const filtered = announcements
+      .filter((a) => a.id !== newAnnouncementFromArticle.id)
+      .map((a) => (a.id === oldId ? { ...a, featured: false } : a));
+
+    const targetInsertIndex = oldIdx >= 0 ? Math.min(oldIdx, filtered.length) : 0;
+    const updated = [
+      ...filtered.slice(0, targetInsertIndex),
+      { ...newAnnouncementFromArticle, featured: true },
+      ...filtered.slice(targetInsertIndex),
+    ];
+
+    onUpdateAnnouncements(updated);
+    setSwapTargetAnnouncement(null);
+    setSwapSearch('');
+    showToast(`Artigo "${article.title}" colocado no lugar do destaque!`);
+  };
+
+  const handlePromoteArticleToFeatured = (article: Article) => {
+    const existingId = `art-dest-${article.id}`;
+    const alreadyExists = announcements.some((a) => a.id === existingId);
+    let updated: AnnouncementItem[];
+    if (alreadyExists) {
+      updated = announcements.map((a) => (a.id === existingId ? { ...a, featured: true } : a));
+    } else {
+      const newItem: AnnouncementItem = {
+        id: existingId,
+        tag: article.category,
+        title: article.title,
+        date: article.date,
+        image: article.image || '/team_juri.webp',
+        excerpt: article.description,
+        content: article.content,
+        featured: true,
+      };
+      updated = [newItem, ...announcements];
+    }
+    onUpdateAnnouncements(updated);
+    showToast('Notícia adicionada aos destaques da Página Principal!');
   };
 
   // Handlers for Leads
@@ -776,7 +986,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <span>Destaques & Pauta</span>
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#8C6F36]/15 text-[#8C6F36] font-bold">
-                {highlights.length}
+                {featuredAnnouncements.length}
               </span>
             </button>
 
@@ -946,22 +1156,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
             {activeSection === 'announcements' && (
               <button
-                onClick={() => {
-                  setEditingAnnouncement({
-                    id: `com-${Date.now()}`,
-                    tag: 'Nota Oficial',
-                    title: '',
-                    date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
-                    image: '/team_juri.jpg',
-                    excerpt: '',
-                    content: [''],
-                  });
-                  setIsNewAnnouncementModalOpen(true);
-                }}
+                onClick={() => handleOpenNewAnnouncement(true, null)}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#17130F] hover:bg-[#8C6F36] text-[#FAF8F4] text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Novo Comunicado</span>
+              </button>
+            )}
+
+            {activeSection === 'destaques' && (
+              <button
+                onClick={() => handleOpenNewAnnouncement(true, null)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#17130F] hover:bg-[#8C6F36] text-[#FAF8F4] text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nova Notícia em Destaque</span>
               </button>
             )}
           </div>
@@ -997,9 +1206,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       Destaques
                     </span>
                     <h3 className="text-2xl sm:text-3xl font-serif text-[#17130F] font-bold mt-1">
-                      {highlights.length}
+                      {featuredAnnouncements.length}
                     </h3>
-                    <span className="text-[11px] text-emerald-600">Matérias em Pauta</span>
+                    <span className="text-[11px] text-emerald-600">Ativos na Página Principal</span>
                   </div>
                   <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                     <Sparkles className="w-6 h-6" />
@@ -1416,26 +1625,37 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           )}
 
           {/* =============================================================== */}
-          {/* TAB 2: DESTAQUES & NOTÍCIAS (2ª SESSÃO) */}
+          {/* TAB 2: DESTAQUES & NOTÍCIAS NA PÁGINA PRINCIPAL */}
           {/* =============================================================== */}
           {activeSection === 'destaques' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
+              {/* Header Info Card */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900">
-                    Matérias Exibidas na Sessão de Destaques (2ª Sessão)
+                    Notícias em Destaque na Página Principal ({featuredAnnouncements.length})
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Edite os títulos, tags, fotos e o conteúdo do modal de cada notícia em pauta:
+                    Edite, remova ou troque qualquer card em destaque na página inicial pelas novas notícias e comunicados registrados.
                   </p>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenNewAnnouncement(true, null)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#8C6F36] hover:bg-[#6E5528] text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer shrink-0 self-start sm:self-center"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Registrar Nova Notícia</span>
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {highlights.map((item) => (
+              {/* Active Featured Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {featuredAnnouncements.map((item, idx) => (
                   <div
                     key={item.id}
-                    className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between"
+                    className="bg-white rounded-2xl border-2 border-[#B89554]/50 shadow-sm overflow-hidden flex flex-col justify-between"
                   >
                     <div>
                       <div className="h-44 relative overflow-hidden bg-slate-900">
@@ -1443,36 +1663,164 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           src={item.image}
                           alt={item.title}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = '/team_juri.webp';
+                          }}
                         />
                         <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#967444] text-white text-[10px] font-bold">
-                          {item.tagLabel}
+                          {item.tag}
+                        </span>
+                        <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center gap-1 shadow">
+                          <Star className="w-3 h-3 fill-current" />
+                          <span>Destaque #{idx + 1}</span>
                         </span>
                       </div>
 
                       <div className="p-5">
                         <span className="text-[11px] text-[#8C6F36] font-medium block mb-1">
-                          {item.date} · {item.category}
+                          {item.date}
                         </span>
                         <h4 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
                           {item.title}
                         </h4>
                         <p className="text-xs text-slate-500 mt-2 line-clamp-3">
-                          {item.subtitle || item.content[0]}
+                          {item.excerpt || item.content[0]}
                         </p>
                       </div>
                     </div>
 
-                    <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+                    <div className="p-4 border-t border-slate-100 bg-slate-50/70 flex flex-wrap items-center justify-between gap-2">
                       <button
-                        onClick={() => setEditingHighlight(item)}
-                        className="px-4 py-2 bg-[#17130F] hover:bg-[#8C6F36] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                        type="button"
+                        onClick={() => {
+                          setSwapSearch('');
+                          setSwapTargetAnnouncement(item);
+                        }}
+                        className="flex-1 min-w-[130px] px-3 py-2 bg-[#8C6F36] hover:bg-[#6E5528] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                        title="Trocar este destaque por outra notícia registrada"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Editar Notícia</span>
+                        <ArrowLeftRight className="w-3.5 h-3.5" />
+                        <span>Trocar Notícia</span>
                       </button>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReplacingFeaturedSlotId(null);
+                            setEditingAnnouncement(item);
+                            setIsNewAnnouncementModalOpen(true);
+                          }}
+                          className="p-2 bg-[#17130F] hover:bg-[#8C6F36] text-white rounded-xl transition-colors cursor-pointer"
+                          title="Editar conteúdo"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {featuredAnnouncements.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleAnnouncementFeatured(item.id)}
+                            className="p-2 border border-slate-300 text-slate-600 hover:text-rose-600 hover:border-rose-300 rounded-xl transition-colors cursor-pointer"
+                            title="Remover dos destaques da página principal"
+                          >
+                            <EyeOff className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Pool of Registered News/Comunicados & Articles ready to promote */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                  <div>
+                    <h4 className="text-base font-semibold text-slate-900">
+                      Outras Publicações Registradas (Prontas para Destaque)
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Coloque qualquer comunicado ou artigo publicado em destaque na Página Principal com 1 clique:
+                    </p>
+                  </div>
+                </div>
+
+                {nonFeaturedAnnouncements.length === 0 && articlesList.length === 0 ? (
+                  <p className="text-xs text-slate-500 py-4 text-center">
+                    Todos os comunicados cadastrados já estão em destaque. Clique em &quot;Registrar Nova Notícia&quot; ou &quot;Trocar Notícia&quot; para adicionar novas publicações.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {nonFeaturedAnnouncements.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            className="w-16 h-14 rounded-lg object-cover shrink-0 border border-slate-200"
+                            onError={(e) => {
+                              e.currentTarget.src = '/team_juri.webp';
+                            }}
+                          />
+                          <div className="min-w-0">
+                            <span className="text-[10px] uppercase tracking-wider font-bold text-[#8C6F36] block">
+                              Comunicado · {item.tag}
+                            </span>
+                            <h5 className="text-xs font-bold text-slate-900 line-clamp-2">{item.title}</h5>
+                            <span className="text-[11px] text-slate-500">{item.date}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToggleAnnouncementFeatured(item.id)}
+                          className="px-3.5 py-2 rounded-xl bg-[#17130F] hover:bg-[#8C6F36] text-white text-xs font-semibold shrink-0 transition-colors cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Star className="w-3.5 h-3.5 text-[#CBA86B]" />
+                          <span>Destacar</span>
+                        </button>
+                      </div>
+                    ))}
+
+                    {articlesList.map((art) => (
+                      <div
+                        key={art.id}
+                        className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={art.image}
+                            alt={art.title}
+                            className="w-16 h-14 rounded-lg object-cover shrink-0 border border-slate-200"
+                            onError={(e) => {
+                              e.currentTarget.src = '/team_juri.webp';
+                            }}
+                          />
+                          <div className="min-w-0">
+                            <span className="text-[10px] uppercase tracking-wider font-bold text-blue-700 block">
+                              Artigo · {art.category}
+                            </span>
+                            <h5 className="text-xs font-bold text-slate-900 line-clamp-2">{art.title}</h5>
+                            <span className="text-[11px] text-slate-500">{art.date}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handlePromoteArticleToFeatured(art)}
+                          className="px-3.5 py-2 rounded-xl bg-[#17130F] hover:bg-[#8C6F36] text-white text-xs font-semibold shrink-0 transition-colors cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Star className="w-3.5 h-3.5 text-[#CBA86B]" />
+                          <span>Destacar</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1488,9 +1836,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     Notas Públicas & Comunicados Forenses
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Gerencie os comunicados oficiais exibidos na sessão com fundo arquitetônico:
+                    Todos os comunicados abaixo são exibidos na Página de Comunicados. Os marcados como &quot;Em Destaque&quot; também aparecem na Página Principal.
                   </p>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenNewAnnouncement(true, null)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#8C6F36] hover:bg-[#6E5528] text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer shrink-0 self-start sm:self-center"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Adicionar Comunicado</span>
+                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1505,10 +1862,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           src={item.image}
                           alt={item.title}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = '/team_juri.webp';
+                          }}
                         />
                         <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#967444] text-white text-[10px] font-bold">
                           {item.tag}
                         </span>
+                        {item.featured && (
+                          <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center gap-1 shadow">
+                            <Star className="w-3 h-3 fill-current" />
+                            <span>Em Destaque</span>
+                          </span>
+                        )}
                       </div>
 
                       <div className="p-5">
@@ -1524,17 +1890,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </div>
                     </div>
 
-                    <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                      <button
-                        onClick={() => handleDeleteAnnouncement(item.id)}
-                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                        title="Excluir comunicado"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAnnouncement(item.id)}
+                          className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          title="Excluir comunicado"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToggleAnnouncementFeatured(item.id)}
+                          className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+                            item.featured
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                              : 'bg-white text-slate-600 border border-slate-200 hover:border-[#8C6F36] hover:text-[#8C6F36]'
+                          }`}
+                          title={item.featured ? 'Remover dos destaques da home' : 'Colocar nos destaques da home'}
+                        >
+                          <Star className={`w-3 h-3 ${item.featured ? 'fill-current' : ''}`} />
+                          <span>{item.featured ? 'No Destaque' : 'Destacar'}</span>
+                        </button>
+                      </div>
 
                       <button
+                        type="button"
                         onClick={() => {
+                          setReplacingFeaturedSlotId(null);
                           setEditingAnnouncement(item);
                           setIsNewAnnouncementModalOpen(true);
                         }}
@@ -1814,7 +2199,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             alt={lawyer.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              e.currentTarget.src = '/team_juri.jpg';
+                              e.currentTarget.src = '/team_juri.webp';
                             }}
                           />
                         </div>
@@ -2317,7 +2702,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               {/* Image Attachment Picker */}
               <ImageAttachmentPicker
                 label="Imagem do Destaque *"
-                value={editingHighlight.image || '/team_juri.jpg'}
+                value={editingHighlight.image || '/team_juri.webp'}
                 onChange={(img) => setEditingHighlight({ ...editingHighlight, image: img })}
                 helperText="Anexe uma foto para ilustrar esta matéria de destaque."
               />
@@ -2355,16 +2740,196 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       )}
 
       {/* ------------------------------------------------------------------- */}
-      {/* MODAL: EDIT ANNOUNCEMENT */}
+      {/* MODAL: SWAP FEATURED NEWS WITH REGISTERED PUBLICATIONS */}
+      {/* ------------------------------------------------------------------- */}
+      {swapTargetAnnouncement && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm animate-fadeIn" role="dialog" aria-modal="true">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <ArrowLeftRight className="w-4 h-4 text-[#8C6F36]" />
+                  <span>Trocar Notícia em Destaque</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                  Substituindo: <strong className="text-slate-800">{swapTargetAnnouncement.title}</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSwapTargetAnnouncement(null)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-5">
+              {/* Search and quick create */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={swapSearch}
+                    onChange={(e) => setSwapSearch(e.target.value)}
+                    placeholder="Buscar comunicado ou artigo registrado..."
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const slotId = swapTargetAnnouncement.id;
+                    setSwapTargetAnnouncement(null);
+                    handleOpenNewAnnouncement(true, slotId);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-[#8C6F36] hover:bg-[#6E5528] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shrink-0 cursor-pointer transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Cadastrar Nova &amp; Trocar</span>
+                </button>
+              </div>
+
+              {/* Other Announcements */}
+              <div className="space-y-2.5">
+                <span className="text-[11px] uppercase tracking-wider font-bold text-slate-500 block">
+                  Comunicados Registrados ({announcements.filter((a) => a.id !== swapTargetAnnouncement.id).length})
+                </span>
+
+                <div className="space-y-2.5">
+                  {announcements
+                    .filter((a) => a.id !== swapTargetAnnouncement.id)
+                    .filter(
+                      (a) =>
+                        !swapSearch.trim() ||
+                        a.title.toLowerCase().includes(swapSearch.toLowerCase()) ||
+                        a.tag.toLowerCase().includes(swapSearch.toLowerCase())
+                    )
+                    .map((candidate) => (
+                      <div
+                        key={candidate.id}
+                        className="p-3.5 rounded-2xl border border-slate-200 hover:border-[#8C6F36] bg-slate-50/70 flex items-center justify-between gap-3 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={candidate.image}
+                            alt={candidate.title}
+                            className="w-16 h-14 rounded-xl object-cover shrink-0 border border-slate-200"
+                            onError={(e) => {
+                              e.currentTarget.src = '/team_juri.webp';
+                            }}
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C6F36]">
+                                {candidate.tag}
+                              </span>
+                              {!candidate.featured && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold">
+                                  Nova / Disponível
+                                </span>
+                              )}
+                            </div>
+                            <h5 className="text-xs sm:text-sm font-bold text-slate-900 line-clamp-2">
+                              {candidate.title}
+                            </h5>
+                            <span className="text-[11px] text-slate-500">{candidate.date}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSwapFeaturedWithAnnouncement(swapTargetAnnouncement.id, candidate.id)
+                          }
+                          className="px-3.5 py-2 rounded-xl bg-[#17130F] hover:bg-[#8C6F36] text-white text-xs font-semibold shrink-0 cursor-pointer transition-colors"
+                        >
+                          Usar esta
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Articles from Produção Técnica */}
+              <div className="space-y-2.5 pt-3 border-t border-slate-100">
+                <span className="text-[11px] uppercase tracking-wider font-bold text-slate-500 block">
+                  Artigos da Produção Técnica ({articlesList.length})
+                </span>
+
+                <div className="space-y-2.5">
+                  {articlesList
+                    .filter(
+                      (art) =>
+                        !swapSearch.trim() ||
+                        art.title.toLowerCase().includes(swapSearch.toLowerCase()) ||
+                        art.category.toLowerCase().includes(swapSearch.toLowerCase())
+                    )
+                    .map((art) => (
+                      <div
+                        key={art.id}
+                        className="p-3.5 rounded-2xl border border-slate-200 hover:border-[#8C6F36] bg-slate-50/70 flex items-center justify-between gap-3 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={art.image}
+                            alt={art.title}
+                            className="w-16 h-14 rounded-xl object-cover shrink-0 border border-slate-200"
+                            onError={(e) => {
+                              e.currentTarget.src = '/team_juri.webp';
+                            }}
+                          />
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 block mb-0.5">
+                              Artigo · {art.category}
+                            </span>
+                            <h5 className="text-xs sm:text-sm font-bold text-slate-900 line-clamp-2">
+                              {art.title}
+                            </h5>
+                            <span className="text-[11px] text-slate-500">{art.date}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSwapFeaturedWithArticle(swapTargetAnnouncement.id, art)
+                          }
+                          className="px-3.5 py-2 rounded-xl bg-[#17130F] hover:bg-[#8C6F36] text-white text-xs font-semibold shrink-0 cursor-pointer transition-colors"
+                        >
+                          Usar este artigo
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------- */}
+      {/* MODAL: EDIT / NEW ANNOUNCEMENT */}
       {/* ------------------------------------------------------------------- */}
       {isNewAnnouncementModalOpen && editingAnnouncement && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" role="dialog" aria-modal="true">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900">
-                Comunicado Oficial
+                {announcements.some((a) => a.id === editingAnnouncement.id)
+                  ? 'Editar Comunicado Oficial'
+                  : 'Novo Comunicado Oficial'}
               </h3>
-              <button onClick={() => setIsNewAnnouncementModalOpen(false)} className="p-1 rounded-full text-slate-400 hover:text-slate-700">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNewAnnouncementModalOpen(false);
+                  setReplacingFeaturedSlotId(null);
+                }}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -2378,13 +2943,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             >
               <div>
                 <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                  Título do Comunicado
+                  Título do Comunicado *
                 </label>
                 <input
                   type="text"
                   required
                   value={editingAnnouncement.title}
                   onChange={(e) => setEditingAnnouncement({ ...editingAnnouncement, title: e.target.value })}
+                  placeholder="Ex: Novo Horário de Atendimento ou Nota Oficial..."
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                 />
               </div>
@@ -2418,10 +2984,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               {/* Image Attachment Picker */}
               <ImageAttachmentPicker
                 label="Imagem do Comunicado Oficial *"
-                value={editingAnnouncement.image || '/team_juri.jpg'}
+                value={editingAnnouncement.image || '/team_juri.webp'}
                 onChange={(img) => setEditingAnnouncement({ ...editingAnnouncement, image: img })}
                 helperText="Anexe uma foto do seu dispositivo ou escolha das imagens do escritório."
               />
+
+              {/* Toggle featured on Home */}
+              <label className="flex items-center gap-3 p-3.5 rounded-2xl border border-[#B89554]/30 bg-amber-50/40 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editingAnnouncement.featured ?? true}
+                  onChange={(e) =>
+                    setEditingAnnouncement({ ...editingAnnouncement, featured: e.target.checked })
+                  }
+                  className="w-4 h-4 accent-[#8C6F36] rounded cursor-pointer"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-900 block">
+                    Exibir nos Destaques da Página Principal
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Além de ir para a Página de Comunicados, aparecerá na vitrine da página inicial.
+                  </span>
+                </div>
+              </label>
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
@@ -2431,18 +3017,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   rows={2}
                   value={editingAnnouncement.excerpt}
                   onChange={(e) => setEditingAnnouncement({ ...editingAnnouncement, excerpt: e.target.value })}
+                  placeholder="Breve resumo exibido no card e na leitura..."
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                 />
               </div>
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                  Conteúdo do Comunicado
+                  Conteúdo Completo do Comunicado
                 </label>
                 <textarea
-                  rows={4}
+                  rows={5}
                   value={editingAnnouncement.content.join('\n\n')}
                   onChange={(e) => setEditingAnnouncement({ ...editingAnnouncement, content: e.target.value.split('\n\n') })}
+                  placeholder="Digite o texto completo da nota oficial..."
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                 />
               </div>
@@ -2450,14 +3038,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsNewAnnouncementModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                  onClick={() => {
+                    setIsNewAnnouncementModalOpen(false);
+                    setReplacingFeaturedSlotId(null);
+                  }}
+                  className="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl text-xs font-semibold bg-[#17130F] hover:bg-[#8C6F36] text-white transition-colors shadow-sm"
+                  className="px-6 py-2.5 rounded-xl text-xs font-semibold bg-[#17130F] hover:bg-[#8C6F36] text-white transition-colors shadow-sm cursor-pointer"
                 >
                   Salvar Comunicado
                 </button>

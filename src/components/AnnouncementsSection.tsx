@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, ArrowRight, X, Share2, Check, MessageSquare } from 'lucide-react';
 import {
-  initialAnnouncements,
+  getStoredAnnouncements,
   AnnouncementItem,
   ContactInfo,
   initialContactInfo,
@@ -10,17 +10,22 @@ import {
 
 interface AnnouncementsSectionProps {
   contactInfo?: ContactInfo;
+  announcementsList?: AnnouncementItem[];
   onOpenAnnouncementsPage?: () => void;
 }
 
 export const AnnouncementsSection: React.FC<AnnouncementsSectionProps> = ({
   contactInfo = initialContactInfo,
+  announcementsList,
   onOpenAnnouncementsPage,
 }) => {
   const [selectedItem, setSelectedItem] = useState<AnnouncementItem | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const announcements: AnnouncementItem[] = initialAnnouncements;
+  const allAnnouncements: AnnouncementItem[] = announcementsList ?? getStoredAnnouncements();
+  const featuredOnly = allAnnouncements.filter((item) => item.featured === true);
+  const announcements: AnnouncementItem[] =
+    featuredOnly.length > 0 ? featuredOnly : allAnnouncements.slice(0, 6);
 
   const handleShare = () => {
     navigator.clipboard?.writeText(window.location.href);

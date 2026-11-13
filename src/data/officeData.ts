@@ -228,8 +228,18 @@ export const getStoredHeroSettings = (): HeroSettings => {
   return initialHeroSettings;
 };
 
+const safeSaveToStorage = (key: string, value: unknown): boolean => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    console.error(`Erro ao salvar ${key} no armazenamento local:`, e);
+    return false;
+  }
+};
+
 export const saveStoredHeroSettings = (settings: HeroSettings) => {
-  localStorage.setItem('nicolau_hero_settings', JSON.stringify(settings));
+  safeSaveToStorage('nicolau_hero_settings', settings);
 };
 
 export const getStoredArticles = (): Article[] => {
@@ -247,8 +257,8 @@ export const getStoredArticles = (): Article[] => {
   return articles;
 };
 
-export const saveStoredArticles = (arts: Article[]) => {
-  localStorage.setItem('nicolau_articles_data', JSON.stringify(arts));
+export const saveStoredArticles = (arts: Article[]): boolean => {
+  return safeSaveToStorage('nicolau_articles_data', arts);
 };
 
 export const getStoredLawyers = (): Lawyer[] => {
@@ -266,8 +276,8 @@ export const getStoredLawyers = (): Lawyer[] => {
   return lawyers;
 };
 
-export const saveStoredLawyers = (lwys: Lawyer[]) => {
-  localStorage.setItem('nicolau_lawyers_data', JSON.stringify(lwys));
+export const saveStoredLawyers = (lwys: Lawyer[]): boolean => {
+  return safeSaveToStorage('nicolau_lawyers_data', lwys);
 };
 
 export interface HighlightItem {
@@ -383,8 +393,8 @@ export const getStoredHighlights = (): HighlightItem[] => {
   return initialHighlights;
 };
 
-export const saveStoredHighlights = (items: HighlightItem[]) => {
-  localStorage.setItem('nicolau_highlights_data', JSON.stringify(items));
+export const saveStoredHighlights = (items: HighlightItem[]): boolean => {
+  return safeSaveToStorage('nicolau_highlights_data', items);
 };
 
 export interface AnnouncementItem {
@@ -395,6 +405,7 @@ export interface AnnouncementItem {
   image: string;
   excerpt: string;
   content: string[];
+  featured?: boolean;
 }
 
 export const initialAnnouncements: AnnouncementItem[] = [
@@ -405,6 +416,7 @@ export const initialAnnouncements: AnnouncementItem[] = [
     date: '08 de Novembro de 2026',
     image: '/team_juri.webp',
     excerpt: 'Reafirmação do compromisso histórico da Advocacia Nicolau com as garantias constitucionais e o sigilo processual.',
+    featured: true,
     content: [
       'A Advocacia Nicolau reafirma seu compromisso histórico de mais de quatro décadas na defesa combativa e ética das prerrogativas da advocacia e das garantias individuais asseguradas pela Constituição Federal.',
       'Nos processos de ampla repercussão pública e perante o Tribunal do Júri, a atuação do escritório permanece estritamente pautada na técnica forense, na ampla defesa e no respeito à legalidade processual penal.',
@@ -418,6 +430,7 @@ export const initialAnnouncements: AnnouncementItem[] = [
     date: '02 de Novembro de 2026',
     image: '/hero_justice_themis.webp',
     excerpt: 'Disponibilização de canal digital criptografado para reuniões virtuais com clientes em todo o território nacional.',
+    featured: true,
     content: [
       'Comunicamos aos nossos clientes e parceiros que, além do tradicional atendimento em nossa sede própria em Guarapuava/PR, disponibilizamos canal digital criptografado para reuniões virtuais e acompanhamento processual.',
       'Dessa forma, clientes em qualquer comarca ou estado contam com a mesma agilidade e atenção exclusiva que consolidaram nossa história.'
@@ -430,6 +443,7 @@ export const initialAnnouncements: AnnouncementItem[] = [
     date: '25 de Outubro de 2026',
     image: '/office_facade_nicolau.webp',
     excerpt: 'Orientações sobre o calendário forense, sessões dos Tribunais Superiores e regime de sobreaviso criminal.',
+    featured: true,
     content: [
       'Informamos que os prazos processuais e o plantão judiciário nos Tribunais de Justiça e Superiores estão devidamente monitorados por nossa controladoria jurídica.',
       'Audiências de custódia, pedidos de liberdade e medidas urgentes permanecem com atendimento ininterrupto em regime de sobreaviso.'
@@ -442,6 +456,7 @@ export const initialAnnouncements: AnnouncementItem[] = [
     date: '18 de Outubro de 2026',
     image: '/team_congresso.webp',
     excerpt: 'Sustentação oral e rigor na análise de perícias balísticas e documentais perante o Conselho de Sentença.',
+    featured: true,
     content: [
       'A defesa em plenário do Tribunal do Júri requer dedicação exclusiva, oratória precisa e profundo domínio das ciências forenses e da medicina legal.',
       'Nossa equipe jurídica atua em todas as etapas, desde a fase investigativa e pronúncia até os debates finais em sessão solene de júri popular.',
@@ -455,6 +470,7 @@ export const initialAnnouncements: AnnouncementItem[] = [
     date: '10 de Outubro de 2026',
     image: '/legal_desk_calltoaction.webp',
     excerpt: 'Estruturação jurídica personalizada de holdings familiares, doações com cláusulas protetivas e governança corporativa.',
+    featured: true,
     content: [
       'O planejamento sucessório e patrimonial preventivo representa uma das ferramentas mais eficazes para garantir a continuidade dos negócios e a harmonia familiar.',
       'Nossa consultoria jurídica elabora instrumentos sob medida, minimizando litígios e custos tributários em transmissões de bens e quotas empresariais.',
@@ -468,6 +484,7 @@ export const initialAnnouncements: AnnouncementItem[] = [
     date: '28 de Setembro de 2026',
     image: '/destaque_isis_sample.webp',
     excerpt: 'Balanço das mais de quatro décadas de atuação contínua da banca em Guarapuava, Curitiba e comarcas de todo o Paraná.',
+    featured: true,
     content: [
       'Desde a fundação em 1978 pelo Dr. Miguel Nicolau Junior, o escritório consolidou sua reputação baseada na lealdade aos clientes, na técnica refinada e na coragem jurídica.',
       'Ao longo de 48 anos, acumulamos precedentes favoráveis, atuação combativa em tribunais e a confiança inabalável da sociedade paranaense.',
@@ -481,7 +498,13 @@ export const getStoredAnnouncements = (): AnnouncementItem[] => {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const hasFeaturedProp = parsed.some((item) => typeof item?.featured === 'boolean');
+        if (!hasFeaturedProp) {
+          return parsed.map((item, idx) => ({ ...item, featured: idx < 6 }));
+        }
+        return parsed;
+      }
     } catch (e) {
       return initialAnnouncements;
     }
@@ -489,8 +512,8 @@ export const getStoredAnnouncements = (): AnnouncementItem[] => {
   return initialAnnouncements;
 };
 
-export const saveStoredAnnouncements = (items: AnnouncementItem[]) => {
-  localStorage.setItem('nicolau_announcements_data', JSON.stringify(items));
+export const saveStoredAnnouncements = (items: AnnouncementItem[]): boolean => {
+  return safeSaveToStorage('nicolau_announcements_data', items);
 };
 
 export interface ClientLead {
