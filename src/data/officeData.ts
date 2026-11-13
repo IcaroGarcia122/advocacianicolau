@@ -493,19 +493,161 @@ export const initialAnnouncements: AnnouncementItem[] = [
   },
 ];
 
+export const initialAnnouncementIds = new Set(initialAnnouncements.map((a) => a.id));
+
+const ANNOUNCEMENTS_STORAGE_KEY = 'nicolau_announcements_data';
+const ANNOUNCEMENTS_CHANNEL_NAME = 'nicolau_portal_sync';
+const IDB_NAME = 'nicolau_portal_db';
+const IDB_STORE = 'portal_kv';
+
+const openPortalDB = (): Promise<IDBDatabase | null> => {
+  if (typeof window === 'undefined' || !('indexedDB' in window)) {
+    return Promise.resolve(null);
+  }
+  return new Promise((resolve) => {
+    try {
+      const request = window.indexedDB.open(IDB_NAME, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) {
+          db.createObjectStore(IDB_STORE);
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+};
+
+export const saveAnnouncementsToIDB = async (items: AnnouncementItem[]): Promise<boolean> => {
+  const db = await openPortalDB();
+  if (!db) return false;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      const store = tx.objectStore(IDB_STORE);
+      store.put(items, ANNOUNCEMENTS_STORAGE_KEY);
+      tx.oncomplete = () => {
+        db.close();
+        resolve(true);
+      };
+      tx.onerror = () => {
+        db.close();
+        resolve(false);
+      };
+    } catch {
+      db.close();
+      resolve(false);
+    }
+  });
+};
+
+export const loadAnnouncementsFromIDB = async (): Promise<AnnouncementItem[] | null> => {
+  const db = await openPortalDB();
+  if (!db) return null;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const store = tx.objectStore(IDB_STORE);
+      const req = store.get(ANNOUNCEMENTS_STORAGE_KEY);
+      req.onsuccess = () => {
+        db.close();
+        const res = req.result;
+        if (Array.isArray(res) && res.length > 0) {
+          resolve(normalizeAnnouncements(res));
+        } else {
+          resolve(null);
+        }
+      };
+      req.onerror = () => {
+        db.close();
+        resolve(null);
+      };
+    } catch {
+      db.close();
+      resolve(null);
+    }
+  });
+};
+
+export const broadcastAnnouncementsUpdate = (items: AnnouncementItem[]) => {
+  if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return;
+  try {
+    const channel = new BroadcastChannel(ANNOUNCEMENTS_CHANNEL_NAME);
+    channel.postMessage({ type: 'announcements_updated', items });
+    channel.close();
+  } catch {
+    // Ignore unsupported BroadcastChannel contexts
+  }
+};
+
+export const subscribeAnnouncementsSync = (onSync: (items: AnnouncementItem[]) => void): (() => void) => {
+  if (typeof window === 'undefined') return () => {};
+
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === ANNOUNCEMENTS_STORAGE_KEY && e.newValue) {
+      try {
+        const parsed = JSON.parse(e.newValue);
+        if (Array.isArray(parsed)) {
+          onSync(normalizeAnnouncements(parsed));
+        }
+      } catch {
+        // Ignore invalid storage payload
+      }
+    }
+  };
+  window.addEventListener('storage', handleStorage);
+
+  let channel: BroadcastChannel | null = null;
+  if ('BroadcastChannel' in window) {
+    try {
+      channel = new BroadcastChannel(ANNOUNCEMENTS_CHANNEL_NAME);
+      channel.onmessage = (event) => {
+        if (event.data?.type === 'announcements_updated' && Array.isArray(event.data.items)) {
+          onSync(normalizeAnnouncements(event.data.items));
+        }
+      };
+    } catch {
+      channel = null;
+    }
+  }
+
+  return () => {
+    window.removeEventListener('storage', handleStorage);
+    if (channel) channel.close();
+  };
+};
+
+const normalizeAnnouncements = (list: AnnouncementItem[]): AnnouncementItem[] => {
+  const hasFeaturedProp = list.some((item) => typeof item?.featured === 'boolean');
+  return list
+    .filter((item) => item && typeof item === 'object' && typeof item.title === 'string')
+    .map((item, idx) => ({
+      ...item,
+      id: item.id || `com-${idx}-${Date.now()}`,
+      tag: item.tag || 'Nota Oficial',
+      date: item.date || '',
+      image: item.image || '/team_juri.webp',
+      excerpt: item.excerpt || '',
+      content: Array.isArray(item.content) && item.content.length > 0 ? item.content : [item.excerpt || item.title],
+      featured: hasFeaturedProp ? Boolean(item.featured) : idx < 6,
+    }));
+};
+
 export const getStoredAnnouncements = (): AnnouncementItem[] => {
-  const saved = localStorage.getItem('nicolau_announcements_data');
+  const saved = localStorage.getItem(ANNOUNCEMENTS_STORAGE_KEY);
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        const hasFeaturedProp = parsed.some((item) => typeof item?.featured === 'boolean');
-        if (!hasFeaturedProp) {
-          return parsed.map((item, idx) => ({ ...item, featured: idx < 6 }));
-        }
-        return parsed;
+        return normalizeAnnouncements(parsed);
       }
-    } catch (e) {
+      if (Array.isArray(parsed) && parsed.length === 0) {
+        return [];
+      }
+    } catch {
       return initialAnnouncements;
     }
   }
@@ -513,7 +655,22 @@ export const getStoredAnnouncements = (): AnnouncementItem[] => {
 };
 
 export const saveStoredAnnouncements = (items: AnnouncementItem[]): boolean => {
-  return safeSaveToStorage('nicolau_announcements_data', items);
+  const normalized = normalizeAnnouncements(items);
+  // Always persist full payload (including high-res attached photos) to IndexedDB and broadcast
+  void saveAnnouncementsToIDB(normalized);
+  broadcastAnnouncementsUpdate(normalized);
+
+  if (safeSaveToStorage(ANNOUNCEMENTS_STORAGE_KEY, normalized)) {
+    return true;
+  }
+
+  // Fallback for localStorage 5MB quota: keep text/metadata in localStorage while IndexedDB holds full images
+  const lightweightCopy = normalized.map((item) =>
+    item.image.startsWith('data:image') && item.image.length > 150000
+      ? { ...item, image: '/team_juri.webp' }
+      : item
+  );
+  return safeSaveToStorage(ANNOUNCEMENTS_STORAGE_KEY, lightweightCopy);
 };
 
 export interface ClientLead {

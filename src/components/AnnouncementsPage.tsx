@@ -51,38 +51,11 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
       const matchesSearch =
         q === '' ||
         item.title.toLowerCase().includes(q) ||
-        item.excerpt.toLowerCase().includes(q) ||
-        item.content.some((c) => c.toLowerCase().includes(q));
+        (item.excerpt || '').toLowerCase().includes(q) ||
+        (item.content || []).some((c) => c.toLowerCase().includes(q));
       return matchesCategory && matchesSearch;
     });
   }, [items, selectedCategory, searchQuery]);
-
-  React.useEffect(() => {
-    const elements = Array.from(document.querySelectorAll('.reveal-on-scroll'));
-    const revealVisible = () => {
-      elements.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        if (rect.top < window.innerHeight + 80) {
-          el.classList.add('is-revealed');
-        }
-      });
-    };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-revealed');
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.01, rootMargin: '60px 0px 0px 0px' }
-    );
-    elements.forEach((el) => observer.observe(el));
-    revealVisible();
-    return () => observer.disconnect();
-  }, [filteredItems]);
 
   const handleShare = (itemTitle: string) => {
     navigator.clipboard?.writeText(window.location.href);
@@ -261,8 +234,7 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
               <article
                 key={item.id}
                 onClick={() => setActiveItem(item)}
-                className="group flex flex-col justify-between bg-[#231B15] border border-[#B89554]/30 rounded-2xl overflow-hidden shadow-xl hover:border-[#CBA86B] hover:shadow-2xl hover:shadow-[#CBA86B]/15 transition-all duration-300 cursor-pointer reveal-on-scroll"
-                style={{ transitionDelay: `${(idx % 3) * 100}ms` }}
+                className="group flex flex-col justify-between bg-[#231B15] border border-[#B89554]/30 rounded-2xl overflow-hidden shadow-xl hover:border-[#CBA86B] hover:shadow-2xl hover:shadow-[#CBA86B]/15 transition-all duration-300 cursor-pointer animate-fadeIn"
               >
                 {/* Image Cover */}
                 <div className="relative h-52 overflow-hidden">

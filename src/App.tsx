@@ -14,6 +14,8 @@ import {
   AnnouncementItem,
   getStoredAnnouncements,
   saveStoredAnnouncements,
+  loadAnnouncementsFromIDB,
+  subscribeAnnouncementsSync,
 } from './data/officeData';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -60,6 +62,25 @@ export default function App() {
   const [preselectedArea, setPreselectedArea] = useState<string>('');
   const [preselectedLawyer, setPreselectedLawyer] = useState<string>('');
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+
+  // Hydrate full announcements (with attached images) from IndexedDB and listen for cross-tab updates
+  useEffect(() => {
+    let active = true;
+    void loadAnnouncementsFromIDB().then((idbItems) => {
+      if (active && idbItems && idbItems.length > 0) {
+        setAnnouncementsList(idbItems);
+      }
+    });
+    const unsubscribe = subscribeAnnouncementsSync((syncedItems) => {
+      if (active) {
+        setAnnouncementsList(syncedItems);
+      }
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
 
   // Sync hash with views
   useEffect(() => {
@@ -139,8 +160,14 @@ export default function App() {
 
     elements.forEach((el) => observer.observe(el));
     revealVisible();
+    const fallbackTimer = window.setTimeout(() => {
+      revealVisible();
+    }, 350);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(fallbackTimer);
+    };
   }, [currentView, announcementsList]);
 
   const scrollToSection = (id: string) => {
@@ -247,6 +274,7 @@ export default function App() {
         onUpdateArticles={handleUpdateArticles}
         onUpdateLawyers={handleUpdateLawyers}
         onUpdateAnnouncements={handleUpdateAnnouncements}
+        onOpenAnnouncementsPage={handleOpenAnnouncementsPage}
         onExit={handleBackToInstitutional}
       />
     );

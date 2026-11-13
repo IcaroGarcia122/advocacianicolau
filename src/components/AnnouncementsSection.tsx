@@ -65,12 +65,11 @@ export const AnnouncementsSection: React.FC<AnnouncementsSectionProps> = ({
 
         {/* Announcements Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {announcements.map((item, idx) => (
+          {announcements.map((item) => (
             <div
               key={item.id}
               onClick={() => setSelectedItem(item)}
-              className="group relative h-80 sm:h-96 rounded-2xl overflow-hidden border border-[#8C6F36]/25 shadow-md cursor-pointer hover:border-[#8C6F36] hover:shadow-2xl hover:shadow-[#8C6F36]/20 transition-all duration-300 flex flex-col justify-end bg-[#17130F] reveal-on-scroll"
-              style={{ transitionDelay: `${idx * 120}ms` }}
+              className="group relative h-80 sm:h-96 rounded-2xl overflow-hidden border border-[#8C6F36]/25 shadow-md cursor-pointer hover:border-[#8C6F36] hover:shadow-2xl hover:shadow-[#8C6F36]/20 transition-all duration-300 flex flex-col justify-end bg-[#17130F] animate-fadeIn"
             >
               {/* Cover Photo */}
               <img

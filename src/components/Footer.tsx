@@ -34,6 +34,7 @@ export const Footer: React.FC<FooterProps> = ({
     { id: 'sobre', label: 'O Escritório' },
     { id: 'equipe', label: 'Nossa Equipe' },
     { id: 'comunicados', label: 'Comunicados' },
+    { id: 'pagina-comunicados', label: 'Portal de Comunicados' },
     { id: 'empresarial', label: 'Empresarial' },
     { id: 'contato', label: 'Contato' },
   ];
