@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { ArrowRight, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ArrowRight, MessageSquare, X } from 'lucide-react';
+import { ContactInfo, initialContactInfo } from '../data/officeData';
 
-export const About: React.FC = () => {
+interface AboutProps {
+  contactInfo?: ContactInfo;
+}
+
+export const About: React.FC<AboutProps> = ({ contactInfo = initialContactInfo }) => {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
+  const whatsappUrl = `https://wa.me/${contactInfo.whatsappNumberDigits}?text=${encodeURIComponent(
+    'Olá! Gostaria de falar com a Advocacia Nicolau sobre os serviços do escritório.'
+  )}`;
 
   return (
     <section id="sobre" className="relative z-10 pt-20 lg:pt-28 pb-0 bg-[#241A14] text-[#FAF8F4] overflow-hidden shadow-[0_-25px_60px_rgba(0,0,0,0.6)]">
@@ -97,66 +107,82 @@ export const About: React.FC = () => {
         </div>
       </div>
 
-      {/* History Details Modal */}
-      {isHistoryModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="relative w-full max-w-2xl bg-[#FFFFFF] text-[#17130F] border border-[#B89554] p-6 sm:p-10 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setIsHistoryModalOpen(false)}
-              className="absolute top-4 right-4 p-2 text-[#17130F]/70 hover:text-[#17130F] focus:outline-none cursor-pointer"
-              aria-label="Fechar história"
+      {/* History Details Modal rendered in document.body */}
+      {isHistoryModalOpen &&
+        createPortal(
+          <div
+            onClick={() => setIsHistoryModalOpen(false)}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-2xl bg-[#FFFFFF] text-[#17130F] border border-[#B89554] p-6 sm:p-10 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
             >
-              <X className="w-5 h-5" />
-            </button>
-
-            <span
-              className="text-xs uppercase tracking-[0.25em] text-[#8C6F36] font-semibold"
-              style={{ fontFamily: "'Cinzel', serif" }}
-            >
-              DESDE 1978 · GUARAPUAVA/PR
-            </span>
-
-            <h3
-              className="text-2xl sm:text-3xl font-serif text-[#17130F] mt-2 mb-6"
-              style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-            >
-              Mais de 4 Décadas de Tradição e Excelência
-            </h3>
-
-            <div className="space-y-4 text-sm sm:text-base text-[#2E2721] font-normal leading-relaxed border-t border-[#B89554]/30 pt-6">
-              <p>
-                Fundado pelo Dr. Miguel Nicolau Junior em 1978, o escritório iniciou suas atividades
-                em uma época de grandes transformações sociojurídicas no Paraná. Desde o início, a
-                banca se pautou pela atuação combativa na advocacia criminal e na proteção dos direitos
-                civis e das famílias da região centro-sul paranaense.
-              </p>
-              <p>
-                Ao longo de sua história, o escritório construiu sua identidade profissional com base
-                na atuação jurídica responsável, no atendimento personalizado e no acompanhamento
-                cuidadoso de cada demanda.
-              </p>
-              <p>
-                Hoje, com uma equipe renovada e multidisciplinar, combinamos o legado de quase meio
-                século de tradição e ética forense com as mais modernas estratégias processuais e
-                tecnologia jurídica, assegurando defesa técnica rigorosa e personalizada.
-              </p>
-            </div>
-
-            <div className="pt-6 border-t border-[#B89554]/25 flex justify-end mt-6">
               <button
                 onClick={() => setIsHistoryModalOpen(false)}
-                className="px-6 py-2.5 bg-[#17130F] text-[#FAF8F4] text-xs uppercase tracking-widest rounded-full font-medium hover:bg-[#8C6F36] transition-colors cursor-pointer"
+                className="absolute top-4 right-4 p-2 text-[#17130F]/70 hover:text-[#17130F] focus:outline-none cursor-pointer"
+                aria-label="Fechar história"
               >
-                Fechar
+                <X className="w-5 h-5" />
               </button>
+
+              <span
+                className="text-xs uppercase tracking-[0.25em] text-[#8C6F36] font-semibold"
+                style={{ fontFamily: "'Cinzel', serif" }}
+              >
+                DESDE 1978 · GUARAPUAVA/PR
+              </span>
+
+              <h3
+                className="text-2xl sm:text-3xl font-serif text-[#17130F] mt-2 mb-6"
+                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+              >
+                Mais de 4 Décadas de Tradição e Excelência
+              </h3>
+
+              <div className="space-y-4 text-sm sm:text-base text-[#2E2721] font-normal leading-relaxed border-t border-[#B89554]/30 pt-6">
+                <p>
+                  Fundado pelo Dr. Miguel Nicolau Junior em 1978, o escritório iniciou suas atividades
+                  em uma época de grandes transformações sociojurídicas no Paraná. Desde o início, a
+                  banca se pautou pela atuação combativa na advocacia criminal e na proteção dos direitos
+                  civis e das famílias da região centro-sul paranaense.
+                </p>
+                <p>
+                  Ao longo de sua história, o escritório construiu sua identidade profissional com base
+                  na atuação jurídica responsável, no atendimento personalizado e no acompanhamento
+                  cuidadoso de cada demanda.
+                </p>
+                <p>
+                  Hoje, com uma equipe renovada e multidisciplinar, combinamos o legado de quase meio
+                  século de tradição e ética forense com as mais modernas estratégias processuais e
+                  tecnologia jurídica, assegurando defesa técnica rigorosa e personalizada.
+                </p>
+              </div>
+
+              <div className="pt-6 border-t border-[#B89554]/25 flex flex-wrap items-center justify-end gap-3 mt-6">
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsHistoryModalOpen(false)}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#CBA86B] text-[#17130F] text-xs uppercase tracking-widest rounded-full font-semibold hover:bg-[#D6B779] transition-colors cursor-pointer"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Falar pelo WhatsApp</span>
+                </a>
+                <button
+                  onClick={() => setIsHistoryModalOpen(false)}
+                  className="px-6 py-2.5 bg-[#17130F] text-[#FAF8F4] text-xs uppercase tracking-widest rounded-full font-medium hover:bg-[#8C6F36] transition-colors cursor-pointer"
+                >
+                  Fechar
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </section>
   );
 };

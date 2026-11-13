@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { HeroSettings, initialHeroSettings } from '../data/officeData';
+import { ContactInfo, HeroSettings, initialContactInfo, initialHeroSettings } from '../data/officeData';
 
 interface HeroProps {
   onExploreClick: () => void;
-  onContactClick: () => void;
+  onContactClick?: () => void;
   heroSettings?: HeroSettings;
+  contactInfo?: ContactInfo;
 }
 
 export const Hero: React.FC<HeroProps> = ({
   onExploreClick,
   onContactClick,
   heroSettings = initialHeroSettings,
+  contactInfo = initialContactInfo,
 }) => {
+  const whatsappUrl = `https://wa.me/${contactInfo.whatsappNumberDigits}?text=${encodeURIComponent(
+    'Olá! Gostaria de entrar em contato com a Advocacia Nicolau.'
+  )}`;
   const [typedText, setTypedText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
 
@@ -101,10 +106,12 @@ export const Hero: React.FC<HeroProps> = ({
               {heroSettings.subtitle}
             </p>
 
-            {/* Button 'Entre em contato' (Chamativo, vibrante e prestigioso) */}
+            {/* Button 'Entre em contato' (Direto para o WhatsApp) */}
             <div>
-              <button
-                onClick={onContactClick}
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="relative inline-flex items-center gap-3.5 px-8 py-4 sm:px-9 sm:py-4.5 rounded-full bg-gradient-to-r from-[#D6B779] via-[#F2E3C6] to-[#CBA86B] text-[#17130F] text-xs sm:text-sm font-bold tracking-[0.08em] uppercase transition-all duration-300 cursor-pointer group shadow-[0_0_30px_rgba(203,168,107,0.55)] hover:shadow-[0_0_45px_rgba(214,183,121,0.85)] hover:scale-105 active:scale-95 border-2 border-[#FAF8F4]/80 ring-2 ring-[#CBA86B]/70"
               >
                 <span className="relative z-10 font-bold">Entre em contato</span>
@@ -113,7 +120,7 @@ export const Hero: React.FC<HeroProps> = ({
                 </span>
                 {/* Ambient pulsing glow behind button */}
                 <span className="absolute -inset-1 rounded-full bg-[#CBA86B]/30 blur-md group-hover:bg-[#CBA86B]/50 transition-all pointer-events-none" />
-              </button>
+              </a>
             </div>
           </div>
 

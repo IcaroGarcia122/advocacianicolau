@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ArrowLeft,
   Search,
@@ -299,13 +300,19 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
         )}
       </main>
 
-      {/* Reader Modal */}
-      {activeItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn">
+      {/* Reader Modal rendered in document.body */}
+      {activeItem &&
+        createPortal(
           <div
-            className="bg-[#1F1813] border border-[#B89554]/50 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col"
-            onClick={(e) => e.stopPropagation()}
+            onClick={closeModal}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn"
+            role="dialog"
+            aria-modal="true"
           >
+            <div
+              className="bg-[#1F1813] border border-[#B89554]/50 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
             {/* Modal Header */}
             <div className="sticky top-0 z-10 bg-[#1F1813]/95 backdrop-blur-md border-b border-[#B89554]/30 p-5 sm:p-6 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -403,7 +410,8 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Bottom Footer */}

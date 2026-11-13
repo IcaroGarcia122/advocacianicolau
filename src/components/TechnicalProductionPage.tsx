@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowLeft, Search, Clock, Calendar, BookOpen, Volume2, VolumeX, Share2, Check, ArrowRight, MessageSquare } from 'lucide-react';
 import { articles, Article, ContactInfo } from '../data/officeData';
 import { Logo } from './Logo';
@@ -367,14 +368,19 @@ export const TechnicalProductionPage: React.FC<TechnicalProductionPageProps> = (
         )}
       </main>
 
-      {/* Full Article Modal */}
-      {activeArticle && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="relative w-full max-w-3xl bg-[#191410] border border-[#B89554] rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+      {/* Full Article Modal rendered in document.body */}
+      {activeArticle &&
+        createPortal(
+          <div
+            onClick={closeArticleModal}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-3xl bg-[#191410] border border-[#B89554] rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden"
+            >
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-[#B89554]/30 bg-[#14100D]">
               <span
@@ -492,20 +498,23 @@ export const TechnicalProductionPage: React.FC<TechnicalProductionPageProps> = (
                   </p>
                 </div>
 
-                <button
-                  onClick={() => {
-                    const title = activeArticle.title;
-                    closeArticleModal();
-                    onConsultTopic(title);
-                  }}
-                  className="px-6 py-2.5 rounded-full bg-[#CBA86B] hover:bg-[#D6B779] text-[#17130F] font-semibold text-xs tracking-wider shrink-0 transition-colors cursor-pointer"
+                <a
+                  href={`https://wa.me/${contactInfo.whatsappNumberDigits}?text=${encodeURIComponent(
+                    `Olá! Estive lendo o artigo "${activeArticle.title}" no site da Advocacia Nicolau e gostaria de consultar sobre o tema.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={closeArticleModal}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#CBA86B] hover:bg-[#D6B779] text-[#17130F] font-semibold text-xs tracking-wider shrink-0 transition-colors cursor-pointer"
                 >
-                  Consultar sobre o Tema
-                </button>
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Consultar sobre o Tema</span>
+                </a>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Technical Page Footer */}

@@ -107,22 +107,34 @@ export default function App() {
 
   // Scroll animations across the entire page
   useEffect(() => {
+    const elements = Array.from(document.querySelectorAll('.reveal-on-scroll, .reveal-scale'));
+
+    const revealVisible = () => {
+      elements.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight + 60) {
+          el.classList.add('is-revealed');
+        }
+      });
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('is-revealed');
+            observer.unobserve(entry.target);
           }
         });
       },
       {
-        threshold: 0.08,
-        rootMargin: '0px 0px -40px 0px',
+        threshold: 0.01,
+        rootMargin: '60px 0px 0px 0px',
       }
     );
 
-    const elements = document.querySelectorAll('.reveal-on-scroll, .reveal-scale');
     elements.forEach((el) => observer.observe(el));
+    revealVisible();
 
     return () => observer.disconnect();
   }, [currentView]);
@@ -283,18 +295,22 @@ export default function App() {
         {/* 1. Hero with background image, Playfair Display typography and typewriter animation */}
         <Hero
           heroSettings={heroSettings}
+          contactInfo={contactInfo}
           onExploreClick={() => scrollToSection('areas')}
           onContactClick={() => scrollToSection('contato')}
         />
 
         {/* 2. Áreas de Atuação (Second session as requested, size preserved) */}
         <div className="reveal-on-scroll">
-          <PracticeAreas onSelectAreaForContact={handleSelectAreaForContact} />
+          <PracticeAreas
+            contactInfo={contactInfo}
+            onSelectAreaForContact={handleSelectAreaForContact}
+          />
         </div>
 
         {/* 3. Sobre o Escritório (Third session: rich brown background, Balança image fixed & shifted left) */}
         <div className="reveal-on-scroll">
-          <About />
+          <About contactInfo={contactInfo} />
         </div>
 
         {/* 4. Nossa Equipe (Fourth session: white background, full-bleed team image) */}
@@ -307,7 +323,10 @@ export default function App() {
 
         {/* 5. Comunicados & Notas Oficiais (Fifth session: 6 official announcements & link to dedicated page) */}
         <div className="reveal-on-scroll">
-          <AnnouncementsSection onOpenAnnouncementsPage={handleOpenAnnouncementsPage} />
+          <AnnouncementsSection
+            contactInfo={contactInfo}
+            onOpenAnnouncementsPage={handleOpenAnnouncementsPage}
+          />
         </div>
 
         {/* 6. Chamada para Contato (CTA Banner matching reference image with full-bleed pen photo & blur/gradient) */}

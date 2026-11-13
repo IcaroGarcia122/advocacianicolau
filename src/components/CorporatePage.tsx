@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowLeft, Building2, FileText, ShieldCheck, Scale, CheckCircle2, MessageSquare, ArrowRight, Phone, Mail, MapPin } from 'lucide-react';
 import {
   ContactInfo,
@@ -249,14 +250,19 @@ export const CorporatePage: React.FC<CorporatePageProps> = ({
         </div>
       </section>
 
-      {/* Modal: Scope of Corporate Services */}
-      {selectedPillar && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="relative w-full max-w-xl bg-[#1C1714] border border-[#B89554] rounded-2xl shadow-2xl p-6 sm:p-8 text-[#FAF8F4] max-h-[90vh] overflow-y-auto">
+      {/* Modal: Scope of Corporate Services rendered in document.body */}
+      {selectedPillar &&
+        createPortal(
+          <div
+            onClick={() => setSelectedPillar(null)}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-xl bg-[#1C1714] border border-[#B89554] rounded-2xl shadow-2xl p-6 sm:p-8 text-[#FAF8F4] max-h-[90vh] overflow-y-auto"
+            >
             <button
               onClick={() => setSelectedPillar(null)}
               className="absolute top-4 right-4 p-2 text-[#FAF8F4]/70 hover:text-[#CBA86B] transition-colors cursor-pointer"
@@ -302,7 +308,8 @@ export const CorporatePage: React.FC<CorporatePageProps> = ({
               </a>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Footer */}

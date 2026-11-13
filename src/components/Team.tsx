@@ -16,6 +16,10 @@ export const Team: React.FC<TeamProps> = ({
     'Olá! Gostaria de falar com os advogados da Advocacia Nicolau.'
   )}`;
 
+  const scheduleWhatsappUrl = `https://wa.me/${contactInfo.whatsappNumberDigits}?text=${encodeURIComponent(
+    'Olá! Gostaria de agendar um atendimento jurídico com a Advocacia Nicolau.'
+  )}`;
+
   return (
     <section id="equipe" className="relative py-24 lg:py-32 bg-[#FFFFFF] text-[#17130F] overflow-hidden min-h-[620px] flex items-center">
       {/* Desktop Only: Full-bleed team photo on the RIGHT with subtle gradient overlay */}
@@ -103,15 +107,15 @@ export const Team: React.FC<TeamProps> = ({
                 <span>Falar com nossos advogados</span>
               </a>
 
-              {onContactClick && (
-                <button
-                  onClick={onContactClick}
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full border border-[#8C6F36] text-[#17130F] hover:bg-[#8C6F36]/10 text-xs sm:text-sm font-semibold tracking-wide transition-colors cursor-pointer"
-                >
-                  <span>Agendar atendimento</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              )}
+              <a
+                href={scheduleWhatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full border border-[#8C6F36] text-[#17130F] hover:bg-[#8C6F36]/10 text-xs sm:text-sm font-semibold tracking-wide transition-colors cursor-pointer"
+              >
+                <span>Agendar atendimento</span>
+                <ArrowRight className="w-4 h-4" />
+              </a>
             </div>
 
             {/* Mobile Framed Team Photo (Moldura elegante abaixo dos textos e informações) */}
