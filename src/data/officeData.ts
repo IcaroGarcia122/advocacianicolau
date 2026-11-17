@@ -37,22 +37,60 @@ export interface ContactInfo {
   phone: string;
   whatsapp: string;
   whatsappNumberDigits: string;
+  instagramUrl?: string;
   email: string;
   workingHours: string;
   googleMapsUrl: string;
+  googleMapsPlaceUrl?: string;
 }
 
+export const buildGoogleMapsEmbedUrl = (
+  address: string,
+  city: string,
+  state: string,
+  cep?: string
+): string => {
+  const query = [address, city, state, cep, 'Brasil'].filter(Boolean).join(', ');
+  return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
+};
+
+export const toEmbeddableMapsUrl = (
+  url: string | undefined,
+  address: string,
+  city: string,
+  state: string,
+  cep?: string
+): string => {
+  const trimmed = (url || '').trim();
+  if (!trimmed) {
+    return buildGoogleMapsEmbedUrl(address, city, state, cep);
+  }
+  if (trimmed.includes('output=embed') || trimmed.includes('/maps/embed')) {
+    return trimmed;
+  }
+  const placeMatch = trimmed.match(/\/maps\/place\/([^/]+)/);
+  if (placeMatch?.[1]) {
+    const decodedPlace = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+    return `https://maps.google.com/maps?q=${encodeURIComponent(decodedPlace)}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
+  }
+  return buildGoogleMapsEmbedUrl(address, city, state, cep);
+};
+
 export const initialContactInfo: ContactInfo = {
-  address: 'Rua XV de Novembro, 7840 - Centro',
+  address: 'Rua Cel. Lustosa, 1022 - Batel',
   city: 'Guarapuava',
   state: 'Paraná',
-  cep: '85010-000',
-  phone: '(42) 3623-1978',
-  whatsapp: '(42) 99876-1978',
-  whatsappNumberDigits: '5542998761978',
+  cep: '85010-060',
+  phone: '(42) 99977-1939',
+  whatsapp: '(42) 99977-1939',
+  whatsappNumberDigits: '5542999771939',
+  instagramUrl: 'https://www.instagram.com/advocacia.nicolau/',
   email: 'contato@advocacianicolau.adv.br',
-  workingHours: 'Segunda a Sexta-feira: 08h30 às 12h00 e 13h30 às 18h00',
-  googleMapsUrl: 'https://maps.google.com/maps?q=Guarapuava,+PR,+Brasil&t=&z=15&ie=UTF8&iwloc=&output=embed',
+  workingHours: 'Segunda a Sexta-feira: 09h00 às 11h30 e 13h00 às 17h00',
+  googleMapsUrl:
+    'https://maps.google.com/maps?q=R.%20Cel.%20Lustosa%2C%201022%20-%20Batel%2C%20Guarapuava%20-%20PR%2C%2085010-060&t=&z=17&ie=UTF8&iwloc=&output=embed',
+  googleMapsPlaceUrl:
+    'https://www.google.com/maps/place/R.+Cel.+Lustosa,+1022+-+Batel,+Guarapuava+-+PR,+85010-060/data=!4m2!3m1!1s0x94ef37ccabdf5333:0x50a634508c94f0e8?sa=X&ved=1t:242&ictx=111',
 };
 
 export const lawyers: Lawyer[] = [
@@ -397,23 +435,33 @@ export const saveStoredHighlights = (items: HighlightItem[]): boolean => {
   return safeSaveToStorage('nicolau_highlights_data', items);
 };
 
+export type PublicationType = 'Comunicado Institucional' | 'Notícia' | 'Artigo Jurídico';
+
 export interface AnnouncementItem {
   id: string;
+  publicationType?: PublicationType;
   tag: string;
   title: string;
   date: string;
+  author?: string;
+  readTime?: string;
   image: string;
   excerpt: string;
   content: string[];
   featured?: boolean;
 }
 
+export type PublicationItem = AnnouncementItem;
+
 export const initialAnnouncements: AnnouncementItem[] = [
   {
     id: 'com-1',
+    publicationType: 'Comunicado Institucional',
     tag: 'Nota Oficial',
     title: 'Posicionamento Institucional e Atuação em Defesas de Repercussão Regional',
     date: '08 de Novembro de 2026',
+    author: 'Advocacia Nicolau',
+    readTime: '3 min de leitura',
     image: '/team_juri.webp',
     excerpt: 'Reafirmação do compromisso histórico da Advocacia Nicolau com as garantias constitucionais e o sigilo processual.',
     featured: true,
@@ -425,22 +473,46 @@ export const initialAnnouncements: AnnouncementItem[] = [
   },
   {
     id: 'com-2',
+    publicationType: 'Notícia',
     tag: 'Atendimento & Estrutura',
     title: 'Atendimento Presencial em Guarapuava e Plataforma Digital Integrada',
     date: '02 de Novembro de 2026',
+    author: 'Advocacia Nicolau',
+    readTime: '2 min de leitura',
     image: '/hero_justice_themis.webp',
     excerpt: 'Disponibilização de canal digital criptografado para reuniões virtuais com clientes em todo o território nacional.',
     featured: true,
     content: [
-      'Comunicamos aos nossos clientes e parceiros que, além do tradicional atendimento em nossa sede própria em Guarapuava/PR, disponibilizamos canal digital criptografado para reuniões virtuais e acompanhamento processual.',
+      'Comunicamos aos nossos clientes e parceiros que, além do tradicional atendimento em nossa sede em Guarapuava/PR, disponibilizamos canal digital criptografado para reuniões virtuais e acompanhamento processual.',
       'Dessa forma, clientes em qualquer comarca ou estado contam com a mesma agilidade e atenção exclusiva que consolidaram nossa história.'
     ],
   },
   {
+    id: 'garantias-criminais',
+    publicationType: 'Artigo Jurídico',
+    tag: 'Direito Criminal',
+    title: 'Audiência de Custódia e a Preservação das Garantias Constitucionais',
+    date: '15 de Outubro de 2026',
+    author: 'Advocacia Nicolau',
+    readTime: '4 min de leitura',
+    image: '/hero_justice_themis.webp',
+    excerpt: 'Compreenda o papel essencial da defesa técnica nas primeiras 24 horas após a prisão e a avaliação da legalidade do ato.',
+    featured: true,
+    content: [
+      'A audiência de custódia representa um dos maiores avanços do ordenamento processual penal brasileiro, consagrada por pactos internacionais de direitos humanos ratificados pelo país e positivada pela Lei 13.964/2019.',
+      'O ato impõe que toda pessoa presa em flagrante seja apresentada à autoridade judicial no prazo máximo de 24 horas, assegurando o controle de legalidade da prisão e a verificação de eventuais abusos ou integridade física do custodiado.',
+      'A presença de um advogado criminalista nesse primeiro contato é determinante para pleitear o relaxamento de prisões ilegais, a concessão de liberdade provisória com ou sem fiança e a aplicação de medidas cautelares diversas do encarceramento.',
+      'Em nossa atuação de mais de quatro décadas em Guarapuava e região, testemunhamos cotidianamente que a celeridade e o conhecimento técnico das nulidades processuais resguardam o bem mais precioso: a liberdade sob o devido processo legal.',
+    ],
+  },
+  {
     id: 'com-3',
+    publicationType: 'Comunicado Institucional',
     tag: 'Plantão Forense',
     title: 'Informativo Jurídico: Atualização sobre Prazos Processuais e Sessões nos Tribunais',
     date: '25 de Outubro de 2026',
+    author: 'Advocacia Nicolau',
+    readTime: '2 min de leitura',
     image: '/office_facade_nicolau.webp',
     excerpt: 'Orientações sobre o calendário forense, sessões dos Tribunais Superiores e regime de sobreaviso criminal.',
     featured: true,
@@ -450,13 +522,51 @@ export const initialAnnouncements: AnnouncementItem[] = [
     ],
   },
   {
+    id: 'contratos-imobiliarios',
+    publicationType: 'Artigo Jurídico',
+    tag: 'Direito Civil',
+    title: 'Segurança Jurídica na Aquisição de Imóveis e Redação Contratual',
+    date: '28 de Setembro de 2026',
+    author: 'Advocacia Nicolau',
+    readTime: '5 min de leitura',
+    image: '/legal_desk_calltoaction.webp',
+    excerpt: 'Aspectos preventivos na due diligence imobiliária para mitigar riscos de evicção, fraudes e disputas possessórias.',
+    featured: true,
+    content: [
+      'A celebração de contratos que envolvem transmissão de propriedade ou posse de bens imóveis exige rigor técnico absoluto. Cláusulas genéricas ou minutas desprovidas de estudo prévio abrem espaço para litígios onerosos.',
+      'A análise de certidões cíveis, criminais, trabalhistas e fiscais em nome dos transmitentes (due diligence imobiliária) é imprescindível para atestar a boa-fé do adquirente e repelir riscos de fraude contra credores ou execução.',
+      'Além disso, a adequada caracterização das arras, cláusulas penais compensatórias, prazos resolutivos e previsão expressa de responsabilidade por vícios ocultos garantem o equilíbrio financeiro do negócio.',
+      'A atuação consultiva e preventiva de um escritório com vivência forense resguarda o investimento e afasta litígios que poderiam perdurar por anos no Judiciário.',
+    ],
+  },
+  {
+    id: 'planejamento-sucessorio',
+    publicationType: 'Artigo Jurídico',
+    tag: 'Direito de Família',
+    title: 'Planejamento Sucessório e Partilha: Preservação do Patrimônio e Harmonia Familiar',
+    date: '10 de Setembro de 2026',
+    author: 'Advocacia Nicolau',
+    readTime: '6 min de leitura',
+    image: '/office_facade_nicolau.webp',
+    excerpt: 'Como a estruturação jurídica antecipada evita desgastes emocionais e minimiza a carga tributária na sucessão de bens.',
+    featured: true,
+    content: [
+      'A sucessão hereditária é um dos momentos mais sensíveis na trajetória de qualquer núcleo familiar e empresarial. Quando não planejada, pode desencadear conflitos duradouros e a dilapidação do patrimônio acumulado ao longo de gerações.',
+      'O planejamento sucessório viabiliza instrumentos eficazes como testamentos públicos, doações com reserva de usufruto, cláusulas de incomunicabilidade e inalienabilidade, bem como a constituição de holdings patrimoniais.',
+      'Na esfera do Direito de Família e Sucessões, nosso compromisso primordial é conciliar a segurança patrimonial com a preservação dos laços afetivos, privilegiando acordos e soluções personalizadas que respeitem a vontade das partes.',
+    ],
+  },
+  {
     id: 'com-4',
+    publicationType: 'Notícia',
     tag: 'Tribunal do Júri',
     title: 'Atuação Técnica Forense no Tribunal do Júri e Defesa das Garantias Processuais',
     date: '18 de Outubro de 2026',
+    author: 'Advocacia Nicolau',
+    readTime: '3 min de leitura',
     image: '/team_congresso.webp',
     excerpt: 'Sustentação oral e rigor na análise de perícias balísticas e documentais perante o Conselho de Sentença.',
-    featured: true,
+    featured: false,
     content: [
       'A defesa em plenário do Tribunal do Júri requer dedicação exclusiva, oratória precisa e profundo domínio das ciências forenses e da medicina legal.',
       'Nossa equipe jurídica atua em todas as etapas, desde a fase investigativa e pronúncia até os debates finais em sessão solene de júri popular.',
@@ -465,30 +575,36 @@ export const initialAnnouncements: AnnouncementItem[] = [
   },
   {
     id: 'com-5',
-    tag: 'Direito Empresarial & Cível',
-    title: 'Planejamento Sucessório e Blindagem Patrimonial Preventiva para Famílias e Empresas',
+    publicationType: 'Artigo Jurídico',
+    tag: 'Direito Civil & Sucessório',
+    title: 'Planejamento Sucessório e Proteção Patrimonial Preventiva para Famílias',
     date: '10 de Outubro de 2026',
+    author: 'Advocacia Nicolau',
+    readTime: '4 min de leitura',
     image: '/legal_desk_calltoaction.webp',
-    excerpt: 'Estruturação jurídica personalizada de holdings familiares, doações com cláusulas protetivas e governança corporativa.',
-    featured: true,
+    excerpt: 'Estruturação jurídica personalizada de holdings familiares, doações com cláusulas protetivas e governança sucessória.',
+    featured: false,
     content: [
-      'O planejamento sucessório e patrimonial preventivo representa uma das ferramentas mais eficazes para garantir a continuidade dos negócios e a harmonia familiar.',
-      'Nossa consultoria jurídica elabora instrumentos sob medida, minimizando litígios e custos tributários em transmissões de bens e quotas empresariais.',
-      'Realizamos diagnóstico detalhado do patrimônio e da estrutura societária com total confidencialidade e segurança jurídica.'
+      'O planejamento sucessório e patrimonial preventivo representa uma das ferramentas mais eficazes para garantir a continuidade do patrimônio e a harmonia familiar.',
+      'Nossa consultoria jurídica elabora instrumentos sob medida, minimizando litígios e custos tributários em transmissões de bens e quotas.',
+      'Realizamos diagnóstico detalhado do patrimônio com total confidencialidade e segurança jurídica.'
     ],
   },
   {
     id: 'com-6',
+    publicationType: 'Comunicado Institucional',
     tag: 'Institucional & Tradição',
     title: 'Mais de Quatro Décadas de Advocacia Ética e Combate Incessante no Paraná',
     date: '28 de Setembro de 2026',
+    author: 'Advocacia Nicolau',
+    readTime: '3 min de leitura',
     image: '/destaque_isis_sample.webp',
     excerpt: 'Balanço das mais de quatro décadas de atuação contínua da banca em Guarapuava, Curitiba e comarcas de todo o Paraná.',
-    featured: true,
+    featured: false,
     content: [
       'Desde a fundação em 1978 pelo Dr. Miguel Nicolau Junior, o escritório consolidou sua reputação baseada na lealdade aos clientes, na técnica refinada e na coragem jurídica.',
-      'Ao longo de 48 anos, acumulamos precedentes favoráveis, atuação combativa em tribunais e a confiança inabalável da sociedade paranaense.',
-      'Seguimos inovando com ferramentas tecnológicas sem abrir mão dos valores clássicos da advocacia artesanal e humanizada.'
+      'Ao longo de décadas, acumulamos precedentes favoráveis, atuação combativa em tribunais e a confiança inabalável da sociedade paranaense.',
+      'Seguimos integrando tradição jurídica com atendimento próximo, ético e humanizado.'
     ],
   },
 ];
@@ -626,9 +742,16 @@ const normalizeAnnouncements = (list: AnnouncementItem[]): AnnouncementItem[] =>
     .filter((item) => item && typeof item === 'object' && typeof item.title === 'string')
     .map((item, idx) => ({
       ...item,
-      id: item.id || `com-${idx}-${Date.now()}`,
+      id: item.id || `pub-${idx}-${Date.now()}`,
+      publicationType:
+        item.publicationType ||
+        (item.id?.startsWith('art-') || item.tag?.startsWith('Direito')
+          ? 'Artigo Jurídico'
+          : 'Comunicado Institucional'),
       tag: item.tag || 'Nota Oficial',
       date: item.date || '',
+      author: item.author || 'Advocacia Nicolau',
+      readTime: item.readTime || '3 min de leitura',
       image: item.image || '/team_juri.webp',
       excerpt: item.excerpt || '',
       content: Array.isArray(item.content) && item.content.length > 0 ? item.content : [item.excerpt || item.title],

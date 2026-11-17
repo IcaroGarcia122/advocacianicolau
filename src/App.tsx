@@ -26,44 +26,117 @@ import { CtaSection } from './components/CtaSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { PrivacyModal } from './components/PrivacyModal';
-import { TechnicalProductionPage } from './components/TechnicalProductionPage';
-import { CorporatePage } from './components/CorporatePage';
 import { AnnouncementsPage } from './components/AnnouncementsPage';
+import { PublicationDetailPage } from './components/PublicationDetailPage';
 import { AdminPanel } from './components/AdminPanel';
 import { AnnouncementsSection } from './components/AnnouncementsSection';
 
-export default function App() {
-  const [currentView, setCurrentView] = useState<'institutional' | 'technical-production' | 'corporate' | 'announcements' | 'admin'>(() => {
-    if (window.location.hash === '#producao-tecnica') return 'technical-production';
-    if (window.location.hash === '#empresarial') return 'corporate';
-    if (window.location.hash === '#comunicados-oficiais' || window.location.hash === '#pagina-comunicados') return 'announcements';
-    if (window.location.hash === '#admin' || window.location.hash === '#painel') return 'admin';
-    return 'institutional';
-  });
+type AppView =
+  | 'institutional'
+  | 'publications'
+  | 'publication-detail'
+  | 'admin';
 
-  const [contactInfo, setContactInfo] = useState<ContactInfo>(() => {
-    const saved = localStorage.getItem('nicolau_contact_info');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return initialContactInfo;
-      }
+const parseHashState = (
+  hash: string
+): { view: AppView; publicationId: string | null } => {
+  if (hash.startsWith('#publicacao/')) {
+    const id = decodeURIComponent(hash.slice('#publicacao/'.length)).trim();
+    if (id) {
+      return { view: 'publication-detail', publicationId: id };
     }
+  }
+  if (
+    hash === '#publicacoes-portal' ||
+    hash === '#comunicados-oficiais' ||
+    hash === '#pagina-comunicados' ||
+    hash === '#producao-tecnica'
+  ) {
+    return { view: 'publications', publicationId: null };
+  }
+  if (hash === '#admin' || hash === '#painel') {
+    return { view: 'admin', publicationId: null };
+  }
+  return { view: 'institutional', publicationId: null };
+};
+
+const loadNormalizedContactInfo = (): ContactInfo => {
+  const saved = localStorage.getItem('nicolau_contact_info');
+  if (!saved) return initialContactInfo;
+
+  try {
+    const parsed = JSON.parse(saved) as Partial<ContactInfo>;
+    const migrated: ContactInfo = {
+      ...initialContactInfo,
+      ...parsed,
+    };
+
+    // Automatically replace legacy placeholder defaults when cached in browser storage
+    if (!parsed.whatsappNumberDigits || parsed.whatsappNumberDigits === '5542998761978') {
+      migrated.whatsappNumberDigits = initialContactInfo.whatsappNumberDigits;
+    }
+    if (!parsed.whatsapp || parsed.whatsapp === '(42) 99876-1978') {
+      migrated.whatsapp = initialContactInfo.whatsapp;
+    }
+    if (!parsed.phone || parsed.phone === '(42) 3623-1978') {
+      migrated.phone = initialContactInfo.phone;
+    }
+    if (
+      !parsed.workingHours ||
+      parsed.workingHours === 'Segunda a Sexta-feira: 08h30 às 12h00 e 13h30 às 18h00'
+    ) {
+      migrated.workingHours = initialContactInfo.workingHours;
+    }
+    if (!parsed.instagramUrl || parsed.instagramUrl === 'https://wa.me/5542999771939') {
+      migrated.instagramUrl = initialContactInfo.instagramUrl;
+    }
+    if (!parsed.address || parsed.address === 'Rua XV de Novembro, 7840 - Centro') {
+      migrated.address = initialContactInfo.address;
+    }
+    if (!parsed.cep || parsed.cep === '85010-000') {
+      migrated.cep = initialContactInfo.cep;
+    }
+    if (
+      !parsed.googleMapsUrl ||
+      parsed.googleMapsUrl.includes('q=Guarapuava,+PR,+Brasil') ||
+      parsed.googleMapsUrl.includes('Rua%20XV%20de%20Novembro')
+    ) {
+      migrated.googleMapsUrl = initialContactInfo.googleMapsUrl;
+    }
+    if (!parsed.googleMapsPlaceUrl) {
+      migrated.googleMapsPlaceUrl = initialContactInfo.googleMapsPlaceUrl;
+    }
+
+    return migrated;
+  } catch {
     return initialContactInfo;
-  });
+  }
+};
+
+export default function App() {
+  const initialRoute = parseHashState(window.location.hash);
+  const [currentView, setCurrentView] = useState<AppView>(initialRoute.view);
+  const [selectedPublicationId, setSelectedPublicationId] = useState<string | null>(
+    initialRoute.publicationId
+  );
+
+  const [contactInfo, setContactInfo] = useState<ContactInfo>(() =>
+    loadNormalizedContactInfo()
+  );
 
   const [heroSettings, setHeroSettings] = useState<HeroSettings>(() => getStoredHeroSettings());
   const [articlesList, setArticlesList] = useState<Article[]>(() => getStoredArticles());
   const [lawyersList, setLawyersList] = useState<Lawyer[]>(() => getStoredLawyers());
-  const [announcementsList, setAnnouncementsList] = useState<AnnouncementItem[]>(() => getStoredAnnouncements());
+  const [announcementsList, setAnnouncementsList] = useState<AnnouncementItem[]>(() =>
+    getStoredAnnouncements()
+  );
 
   const [activeSection, setActiveSection] = useState<string>('inicio');
   const [preselectedArea, setPreselectedArea] = useState<string>('');
   const [preselectedLawyer, setPreselectedLawyer] = useState<string>('');
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
 
-  // Hydrate full announcements (with attached images) from IndexedDB and listen for cross-tab updates
+  // Hydrate full publications (with attached images) from IndexedDB and listen for cross-tab updates
   useEffect(() => {
     let active = true;
     void loadAnnouncementsFromIDB().then((idbItems) => {
@@ -85,20 +158,11 @@ export default function App() {
   // Sync hash with views
   useEffect(() => {
     const handleHashChange = () => {
-      if (window.location.hash === '#producao-tecnica') {
-        setCurrentView('technical-production');
+      const next = parseHashState(window.location.hash);
+      setCurrentView(next.view);
+      setSelectedPublicationId(next.publicationId);
+      if (next.view !== 'institutional') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else if (window.location.hash === '#empresarial') {
-        setCurrentView('corporate');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else if (window.location.hash === '#comunicados-oficiais' || window.location.hash === '#pagina-comunicados') {
-        setCurrentView('announcements');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else if (window.location.hash === '#admin' || window.location.hash === '#painel') {
-        setCurrentView('admin');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        setCurrentView('institutional');
       }
     };
 
@@ -110,7 +174,7 @@ export default function App() {
     if (currentView !== 'institutional') return;
 
     const handleScroll = () => {
-      const sections = ['inicio', 'areas', 'sobre', 'equipe', 'comunicados', 'contato'];
+      const sections = ['inicio', 'areas', 'sobre', 'equipe', 'publicacoes', 'contato'];
       const scrollPosition = window.scrollY + 200;
 
       for (const sectionId of sections) {
@@ -174,6 +238,7 @@ export default function App() {
     if (currentView !== 'institutional') {
       window.location.hash = '';
       setCurrentView('institutional');
+      setSelectedPublicationId(null);
       setTimeout(() => {
         const el = document.getElementById(id);
         if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -187,33 +252,31 @@ export default function App() {
     }
   };
 
-  const handleOpenCorporatePage = () => {
-    window.location.hash = 'empresarial';
-    setCurrentView('corporate');
+  const handleOpenPublicationsPage = () => {
+    window.location.hash = 'publicacoes-portal';
+    setCurrentView('publications');
+    setSelectedPublicationId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleOpenTechnicalProduction = () => {
-    window.location.hash = 'producao-tecnica';
-    setCurrentView('technical-production');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleOpenAnnouncementsPage = () => {
-    window.location.hash = 'comunicados-oficiais';
-    setCurrentView('announcements');
+  const handleSelectPublication = (id: string) => {
+    window.location.hash = `publicacao/${encodeURIComponent(id)}`;
+    setSelectedPublicationId(id);
+    setCurrentView('publication-detail');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleOpenAdmin = () => {
     window.location.hash = 'admin';
     setCurrentView('admin');
+    setSelectedPublicationId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBackToInstitutional = () => {
     window.location.hash = '';
     setCurrentView('institutional');
+    setSelectedPublicationId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -242,22 +305,9 @@ export default function App() {
     return saveStoredAnnouncements(updated);
   };
 
-  const handleScheduleWithLawyer = (lawyerName: string) => {
-    setPreselectedLawyer(lawyerName);
-    scrollToSection('contato');
-  };
-
   const handleSelectAreaForContact = (areaTitle: string) => {
     setPreselectedArea(areaTitle);
     scrollToSection('contato');
-  };
-
-  const handleConsultFromArticle = (topicTitle: string) => {
-    handleBackToInstitutional();
-    setPreselectedArea(topicTitle);
-    setTimeout(() => {
-      scrollToSection('contato');
-    }, 150);
   };
 
   // View: Administrative Control Panel
@@ -274,43 +324,41 @@ export default function App() {
         onUpdateArticles={handleUpdateArticles}
         onUpdateLawyers={handleUpdateLawyers}
         onUpdateAnnouncements={handleUpdateAnnouncements}
-        onOpenAnnouncementsPage={handleOpenAnnouncementsPage}
+        onOpenAnnouncementsPage={handleOpenPublicationsPage}
+        onOpenPublication={handleSelectPublication}
         onExit={handleBackToInstitutional}
       />
     );
   }
 
-  // View: Technical Production & Juridical Articles
-  if (currentView === 'technical-production') {
-    return (
-      <TechnicalProductionPage
-        contactInfo={contactInfo}
-        articlesList={articlesList}
-        onBackToHome={handleBackToInstitutional}
-        onConsultTopic={handleConsultFromArticle}
-        onOpenAdmin={handleOpenAdmin}
-      />
-    );
+  // View: Individual Publication Detail Page (#publicacao/<id>)
+  if (currentView === 'publication-detail' && selectedPublicationId) {
+    const activePublication =
+      announcementsList.find((item) => item.id === selectedPublicationId) ||
+      announcementsList[0];
+
+    if (activePublication) {
+      return (
+        <PublicationDetailPage
+          publication={activePublication}
+          allPublications={announcementsList}
+          contactInfo={contactInfo}
+          onBackToHome={handleBackToInstitutional}
+          onOpenPublicationsPortal={handleOpenPublicationsPage}
+          onSelectPublication={handleSelectPublication}
+        />
+      );
+    }
   }
 
-  // View: Corporate & Business Law Dedicated Page
-  if (currentView === 'corporate') {
-    return (
-      <CorporatePage
-        contactInfo={contactInfo}
-        onBackToHome={handleBackToInstitutional}
-        onConsultCorporate={(topic) => handleConsultFromArticle(topic)}
-      />
-    );
-  }
-
-  // View: Official Announcements Dedicated Page
-  if (currentView === 'announcements') {
+  // View: Unified Publications Portal (#publicacoes-portal)
+  if (currentView === 'publications') {
     return (
       <AnnouncementsPage
         contactInfo={contactInfo}
         announcementsList={announcementsList}
         onBackToHome={handleBackToInstitutional}
+        onSelectPublication={handleSelectPublication}
         onOpenAdmin={handleOpenAdmin}
       />
     );
@@ -324,9 +372,7 @@ export default function App() {
         contactInfo={contactInfo}
         activeSection={activeSection}
         onNavigate={scrollToSection}
-        onOpenTechnicalPage={handleOpenTechnicalProduction}
-        onOpenCorporatePage={handleOpenCorporatePage}
-        onOpenAnnouncementsPage={handleOpenAnnouncementsPage}
+        onOpenPublicationsPage={handleOpenPublicationsPage}
         onOpenAdmin={handleOpenAdmin}
       />
 
@@ -340,7 +386,7 @@ export default function App() {
           onContactClick={() => scrollToSection('contato')}
         />
 
-        {/* 2. Áreas de Atuação (Second session as requested, size preserved) */}
+        {/* 2. Áreas de Atuação */}
         <div className="reveal-on-scroll">
           <PracticeAreas
             contactInfo={contactInfo}
@@ -348,12 +394,12 @@ export default function App() {
           />
         </div>
 
-        {/* 3. Sobre o Escritório (Third session: rich brown background, Balança image fixed & shifted left) */}
+        {/* 3. O Escritório */}
         <div className="reveal-on-scroll">
           <About contactInfo={contactInfo} />
         </div>
 
-        {/* 4. Nossa Equipe (Fourth session: white background, full-bleed team image) */}
+        {/* 4. Nossa Equipe */}
         <div className="reveal-on-scroll">
           <Team
             contactInfo={contactInfo}
@@ -361,21 +407,22 @@ export default function App() {
           />
         </div>
 
-        {/* 5. Comunicados & Notas Oficiais (Fifth session: featured official announcements & link to dedicated page) */}
+        {/* 5. Publicações (Destaques com link para páginas individuais e portal completo) */}
         <div className="reveal-on-scroll">
           <AnnouncementsSection
             contactInfo={contactInfo}
             announcementsList={announcementsList}
-            onOpenAnnouncementsPage={handleOpenAnnouncementsPage}
+            onOpenAnnouncementsPage={handleOpenPublicationsPage}
+            onSelectPublication={handleSelectPublication}
           />
         </div>
 
-        {/* 6. Chamada para Contato (CTA Banner matching reference image with full-bleed pen photo & blur/gradient) */}
+        {/* 6. Chamada para Contato */}
         <div className="reveal-on-scroll">
           <CtaSection contactInfo={contactInfo} />
         </div>
 
-        {/* 7. Contato e Localização (with extended rectangular Google Maps below form) */}
+        {/* 7. Contato e Localização */}
         <div className="reveal-on-scroll">
           <ContactSection
             contactInfo={contactInfo}
@@ -386,15 +433,13 @@ export default function App() {
         </div>
       </main>
 
-      {/* Footer matching template with admin button in sub-footer */}
+      {/* Footer matching main 6-item structure */}
       <Footer
         contactInfo={contactInfo}
         onNavigate={scrollToSection}
         onOpenPrivacy={() => setIsPrivacyOpen(true)}
         onOpenContact={() => scrollToSection('contato')}
-        onOpenTechnicalPage={handleOpenTechnicalProduction}
-        onOpenCorporatePage={handleOpenCorporatePage}
-        onOpenAnnouncementsPage={handleOpenAnnouncementsPage}
+        onOpenPublicationsPage={handleOpenPublicationsPage}
         onOpenAdmin={handleOpenAdmin}
       />
 

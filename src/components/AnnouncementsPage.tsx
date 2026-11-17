@@ -1,18 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ArrowLeft,
   Search,
   Calendar,
-  Share2,
-  Check,
   ArrowRight,
   MessageSquare,
-  Volume2,
-  VolumeX,
-  X,
   BellRing,
-  Filter,
+  Clock,
+  BookOpen,
 } from 'lucide-react';
 import { getStoredAnnouncements, AnnouncementItem, ContactInfo } from '../data/officeData';
 import { Logo } from './Logo';
@@ -21,6 +16,7 @@ interface AnnouncementsPageProps {
   contactInfo: ContactInfo;
   announcementsList?: AnnouncementItem[];
   onBackToHome: () => void;
+  onSelectPublication?: (id: string) => void;
   onOpenAdmin?: () => void;
 }
 
@@ -28,71 +24,91 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
   contactInfo,
   announcementsList,
   onBackToHome,
-  onOpenAdmin,
+  onSelectPublication,
 }) => {
+  const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeItem, setActiveItem] = useState<AnnouncementItem | null>(null);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Dynamic typewriter animation on hero subtitle highlight
+  const wordsToType = useMemo(
+    () => [
+      'Artigos Jurídicos.',
+      'Notícias do Escritório.',
+      'Comunicados Oficiais.',
+      'Conteúdo Técnico.',
+    ],
+    []
+  );
+  const [wordIndex, setWordIndex] = useState(0);
+  const [typedTitle, setTypedTitle] = useState('Artigos Jurídicos.');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const currentWord = wordsToType[wordIndex];
+    let timeout: ReturnType<typeof setTimeout>;
+
+    if (!isDeleting && typedTitle === currentWord) {
+      timeout = setTimeout(() => setIsDeleting(true), 2200);
+    } else if (isDeleting && typedTitle === '') {
+      setIsDeleting(false);
+      setWordIndex((prev) => (prev + 1) % wordsToType.length);
+    } else {
+      const speed = isDeleting ? 38 : 80;
+      timeout = setTimeout(() => {
+        setTypedTitle((prev) =>
+          isDeleting
+            ? currentWord.substring(0, prev.length - 1)
+            : currentWord.substring(0, prev.length + 1)
+        );
+      }, speed);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [typedTitle, isDeleting, wordIndex, wordsToType]);
 
   const items = announcementsList ?? getStoredAnnouncements();
 
+  const publicationTypes = [
+    { id: 'all', label: 'Todos os Tipos' },
+    { id: 'Artigo Jurídico', label: 'Artigos Jurídicos' },
+    { id: 'Notícia', label: 'Notícias' },
+    { id: 'Comunicado Institucional', label: 'Comunicados Institucionais' },
+  ];
+
   const categories = useMemo(() => {
     const set = new Set<string>();
-    items.forEach((item) => set.add(item.tag));
+    items.forEach((item) => {
+      if (item.tag) set.add(item.tag);
+    });
     return ['all', ...Array.from(set)];
   }, [items]);
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
+      const itemType = item.publicationType || 'Comunicado Institucional';
+      const matchesType = selectedType === 'all' || itemType === selectedType;
       const matchesCategory = selectedCategory === 'all' || item.tag === selectedCategory;
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         q === '' ||
         item.title.toLowerCase().includes(q) ||
         (item.excerpt || '').toLowerCase().includes(q) ||
+        (item.author || '').toLowerCase().includes(q) ||
         (item.content || []).some((c) => c.toLowerCase().includes(q));
-      return matchesCategory && matchesSearch;
+      return matchesType && matchesCategory && matchesSearch;
     });
-  }, [items, selectedCategory, searchQuery]);
-
-  const handleShare = (itemTitle: string) => {
-    navigator.clipboard?.writeText(window.location.href);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
-  };
-
-  const handleToggleAudio = () => {
-    if (!('speechSynthesis' in window)) return;
-
-    if (isPlayingAudio) {
-      window.speechSynthesis.cancel();
-      setIsPlayingAudio(false);
-    } else if (activeItem) {
-      window.speechSynthesis.cancel();
-      const text = `${activeItem.title}. ${activeItem.excerpt}. ${activeItem.content.join(' ')}`;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'pt-BR';
-      utterance.rate = 1.0;
-      utterance.onend = () => setIsPlayingAudio(false);
-      utterance.onerror = () => setIsPlayingAudio(false);
-      window.speechSynthesis.speak(utterance);
-      setIsPlayingAudio(true);
-    }
-  };
-
-  const closeModal = () => {
-    if (isPlayingAudio && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setIsPlayingAudio(false);
-    }
-    setActiveItem(null);
-  };
+  }, [items, selectedType, selectedCategory, searchQuery]);
 
   const whatsappUrl = `https://wa.me/${contactInfo.whatsappNumberDigits}?text=${encodeURIComponent(
-    'Olá! Gostaria de falar sobre um comunicado oficial da Advocacia Nicolau.'
+    'Olá! Gostaria de falar sobre uma publicação do portal da Advocacia Nicolau.'
   )}`;
+
+  const handleOpenPublication = (item: AnnouncementItem) => {
+    if (onSelectPublication) {
+      onSelectPublication(item.id);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#15110E] text-[#FAF8F4] flex flex-col font-sans selection:bg-[#B89554]/30 selection:text-[#FAF8F4]">
@@ -100,6 +116,7 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
       <header className="sticky top-0 z-40 bg-[#17130F]/95 backdrop-blur-md border-b border-[#B89554]/25 py-4 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <button
+            type="button"
             onClick={onBackToHome}
             className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-[#D6B779] hover:text-[#FAF8F4] transition-colors cursor-pointer py-1.5 focus-visible:outline-none"
           >
@@ -108,6 +125,7 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={onBackToHome}
             className="cursor-pointer focus-visible:outline-none hover:scale-[1.02] transition-transform"
           >
@@ -126,19 +144,15 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
         </div>
       </header>
 
-      {/* Hero Banner (Sessão com Fundo Branco) */}
+      {/* Hero Banner (Fundo Branco conforme preferência visual) */}
       <section className="relative py-16 sm:py-24 bg-white text-[#17130F] border-b border-[#8C6F36]/20 overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.06] pointer-events-none mix-blend-multiply">
+        <div className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-multiply">
           <img
             src="/office_facade_nicolau.webp"
             alt=""
             className="w-full h-full object-cover filter contrast-125"
             loading="lazy"
             decoding="async"
-            onError={(e) => {
-              const target = e.currentTarget;
-              target.src = '/src/assets/images/office_facade_nicolau_1794270160258.jpg';
-            }}
           />
         </div>
 
@@ -149,91 +163,123 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
               className="text-xs uppercase tracking-[0.28em] text-[#8C6F36] font-semibold"
               style={{ fontFamily: "'Cinzel', Georgia, serif" }}
             >
-              CANAL DE NOTAS & INFORMATIVOS OFICIAIS
+              CENTRAL DE PUBLICAÇÕES · ADVOCACIA NICOLAU
             </span>
             <span className="w-10 h-[1.5px] bg-[#8C6F36]" />
           </div>
 
           <h1
-            className="text-3xl sm:text-5xl lg:text-6xl font-normal leading-tight text-[#17130F] mb-6"
+            className="text-3xl sm:text-5xl lg:text-6xl font-normal leading-tight text-[#17130F] mb-5"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
-            Comunicados & Notas Oficiais
+            Publicações:<br />
+            <span className="text-[#8C6F36] italic inline-block min-h-[1.2em]">
+              {typedTitle}
+              <span
+                className="inline-block w-[3px] h-[0.8em] bg-[#8C6F36] ml-1.5 align-middle animate-pulse"
+                aria-hidden="true"
+              />
+            </span>
           </h1>
 
           <p className="text-sm sm:text-base lg:text-lg text-[#4A3E36] font-normal max-w-2xl mx-auto leading-relaxed mb-10">
-            Transparência, posicionamentos institucionais e informações jurídicas oficiais emitidas pela banca da Advocacia Nicolau.
+            Acervo unificado de conteúdos jurídicos, artigos doutrinários, notícias e comunicados institucionais da Advocacia Nicolau.
           </p>
 
-          {/* Search Box on White Background */}
+          {/* Search Box */}
           <div className="max-w-xl mx-auto relative mb-6">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar comunicado por título, assunto ou termo jurídico..."
+              placeholder="Buscar por título, tema jurídico, autor ou palavra-chave..."
               className="w-full pl-12 pr-4 py-3.5 bg-[#F8F6F1] border border-[#8C6F36]/30 rounded-full text-[#17130F] placeholder:text-slate-400 text-sm focus:border-[#8C6F36] focus:ring-2 focus:ring-[#8C6F36]/20 focus:outline-none transition-all shadow-sm"
             />
             <Search className="w-5 h-5 text-[#8C6F36] absolute left-4 top-1/2 -translate-y-1/2" />
           </div>
 
-          {/* Category Filter Chips */}
-          <div className="flex flex-wrap items-center justify-center gap-2 max-w-3xl mx-auto">
+          {/* Publication Type Filter Tabs */}
+          <div className="flex flex-wrap items-center justify-center gap-2 max-w-3xl mx-auto mb-3">
+            {publicationTypes.map((typeOpt) => (
+              <button
+                key={typeOpt.id}
+                type="button"
+                onClick={() => setSelectedType(typeOpt.id)}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase transition-all cursor-pointer ${
+                  selectedType === typeOpt.id
+                    ? 'bg-[#8C6F36] text-white shadow-md'
+                    : 'bg-[#F8F6F1] text-[#17130F] border border-[#8C6F36]/30 hover:border-[#8C6F36]'
+                }`}
+              >
+                {typeOpt.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Category Tag Filter Chips */}
+          <div className="flex flex-wrap items-center justify-center gap-2 max-w-4xl mx-auto">
             {categories.map((cat) => (
               <button
                 key={cat}
+                type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium tracking-wider uppercase transition-all cursor-pointer ${
+                className={`px-3.5 py-1 rounded-full text-[11px] font-medium tracking-wide transition-all cursor-pointer ${
                   selectedCategory === cat
-                    ? 'bg-[#17130F] text-[#FAF8F4] font-semibold shadow-md'
-                    : 'bg-[#F8F6F1] text-slate-700 border border-[#8C6F36]/30 hover:border-[#8C6F36] hover:bg-slate-100 hover:text-[#17130F]'
+                    ? 'bg-[#17130F] text-[#FAF8F4] font-semibold shadow-sm'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:border-[#8C6F36] hover:text-[#17130F]'
                 }`}
               >
-                {cat === 'all' ? 'Todos os Comunicados' : cat}
+                {cat === 'all' ? 'Todas as Categorias' : cat}
               </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Announcements List / Grid */}
+      {/* Publications Grid */}
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full">
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-[#B89554]/25">
           <span className="text-xs sm:text-sm text-[#FAF8F4]/70">
-            Exibindo <strong className="text-[#CBA86B] font-semibold">{filteredItems.length}</strong> {filteredItems.length === 1 ? 'comunicado' : 'comunicados'}
+            Exibindo <strong className="text-[#CBA86B] font-semibold">{filteredItems.length}</strong>{' '}
+            {filteredItems.length === 1 ? 'publicação' : 'publicações'}
           </span>
 
           <span
-            className="text-[11px] uppercase tracking-wider text-[#CBA86B] font-medium"
+            className="text-[11px] uppercase tracking-wider text-[#CBA86B] font-medium flex items-center gap-1.5"
             style={{ fontFamily: "'Cinzel', serif" }}
           >
-            Publicações Oficiais
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Páginas Individuais</span>
           </span>
         </div>
 
         {filteredItems.length === 0 ? (
           <div className="py-20 text-center bg-[#251D17]/40 border border-[#B89554]/20 rounded-2xl p-8">
             <BellRing className="w-12 h-12 text-[#CBA86B]/50 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-[#FAF8F4] mb-2">Nenhum comunicado encontrado</h3>
+            <h3 className="text-lg font-semibold text-[#FAF8F4] mb-2">
+              Nenhuma publicação encontrada
+            </h3>
             <p className="text-sm text-[#FAF8F4]/70 max-w-md mx-auto mb-6">
-              Nenhum item corresponde à sua busca ou categoria selecionada.
+              Nenhum conteúdo corresponde à sua busca ou filtros selecionados.
             </p>
             <button
+              type="button"
               onClick={() => {
                 setSearchQuery('');
+                setSelectedType('all');
                 setSelectedCategory('all');
               }}
-              className="px-5 py-2 rounded-full border border-[#CBA86B] text-[#CBA86B] text-xs font-semibold hover:bg-[#CBA86B] hover:text-[#17130F] transition-colors"
+              className="px-5 py-2 rounded-full border border-[#CBA86B] text-[#CBA86B] text-xs font-semibold hover:bg-[#CBA86B] hover:text-[#17130F] transition-colors cursor-pointer"
             >
               Limpar filtros
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredItems.map((item, idx) => (
+            {filteredItems.map((item) => (
               <article
                 key={item.id}
-                onClick={() => setActiveItem(item)}
+                onClick={() => handleOpenPublication(item)}
                 className="group flex flex-col justify-between bg-[#231B15] border border-[#B89554]/30 rounded-2xl overflow-hidden shadow-xl hover:border-[#CBA86B] hover:shadow-2xl hover:shadow-[#CBA86B]/15 transition-all duration-300 cursor-pointer animate-fadeIn"
               >
                 {/* Image Cover */}
@@ -250,17 +296,32 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#231B15] via-black/40 to-transparent" />
-                  <span className="absolute top-4 left-4 px-3 py-1 bg-[#8C6F36] text-[#FAF8F4] text-[11px] font-semibold tracking-wide rounded-full shadow-md">
-                    {item.tag}
-                  </span>
+                  <div className="absolute top-4 left-4 right-4 flex flex-wrap items-center gap-1.5">
+                    {item.publicationType && (
+                      <span className="px-2.5 py-0.5 bg-[#17130F]/90 border border-[#CBA86B]/50 text-[#D6B779] text-[10px] font-semibold uppercase tracking-wider rounded-full">
+                        {item.publicationType}
+                      </span>
+                    )}
+                    <span className="px-3 py-0.5 bg-[#8C6F36] text-[#FAF8F4] text-[11px] font-semibold tracking-wide rounded-full shadow-md">
+                      {item.tag}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Body Content */}
                 <div className="p-6 flex-1 flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center gap-2 text-xs text-[#CBA86B] mb-3 font-light">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>{item.date}</span>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-[#CBA86B] mb-3 font-light">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>{item.date}</span>
+                      </span>
+                      {item.readTime && (
+                        <span className="flex items-center gap-1 text-[#FAF8F4]/60">
+                          <Clock className="w-3 h-3" />
+                          <span>{item.readTime}</span>
+                        </span>
+                      )}
                     </div>
 
                     <h3 className="text-base sm:text-lg font-bold text-[#FAF8F4] leading-snug group-hover:text-[#D6B779] transition-colors line-clamp-2 mb-3">
@@ -273,7 +334,7 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
                   </div>
 
                   <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-[#CBA86B]">
-                    <span>Ler nota completa</span>
+                    <span>Abrir página da publicação</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
                   </div>
                 </div>
@@ -282,120 +343,6 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
           </div>
         )}
       </main>
-
-      {/* Reader Modal rendered in document.body */}
-      {activeItem &&
-        createPortal(
-          <div
-            onClick={closeModal}
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div
-              className="bg-[#1F1813] border border-[#B89554]/50 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-            {/* Modal Header */}
-            <div className="sticky top-0 z-10 bg-[#1F1813]/95 backdrop-blur-md border-b border-[#B89554]/30 p-5 sm:p-6 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 bg-[#8C6F36] text-[#FAF8F4] text-[11px] font-semibold tracking-wide rounded-full">
-                  {activeItem.tag}
-                </span>
-                <span className="text-xs text-[#FAF8F4]/70 flex items-center gap-1.5 ml-2">
-                  <Calendar className="w-3.5 h-3.5 text-[#CBA86B]" />
-                  {activeItem.date}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleToggleAudio}
-                  className="p-2 text-[#D6B779] hover:bg-white/10 rounded-full transition-colors cursor-pointer"
-                  title={isPlayingAudio ? 'Parar leitura de áudio' : 'Ouvir comunicado'}
-                >
-                  {isPlayingAudio ? <VolumeX className="w-5 h-5 text-red-400" /> : <Volume2 className="w-5 h-5" />}
-                </button>
-
-                <button
-                  onClick={() => handleShare(activeItem.title)}
-                  className="p-2 text-[#D6B779] hover:bg-white/10 rounded-full transition-colors cursor-pointer"
-                  title="Copiar link"
-                >
-                  {copiedLink ? <Check className="w-5 h-5 text-emerald-400" /> : <Share2 className="w-5 h-5" />}
-                </button>
-
-                <button
-                  onClick={closeModal}
-                  className="p-2 text-[#FAF8F4]/70 hover:text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 sm:p-8 space-y-6">
-              {activeItem.image && (
-                <div className="rounded-xl overflow-hidden max-h-72 w-full border border-[#B89554]/30">
-                  <img
-                    src={activeItem.image}
-                    alt={activeItem.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      target.src = '/team_juri.webp';
-                    }}
-                  />
-                </div>
-              )}
-
-              <h2
-                className="text-2xl sm:text-3xl font-bold text-[#FAF8F4] leading-tight"
-                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-              >
-                {activeItem.title}
-              </h2>
-
-              <p className="text-sm sm:text-base font-medium text-[#D6B779] leading-relaxed border-l-2 border-[#CBA86B] pl-4 italic">
-                {activeItem.excerpt}
-              </p>
-
-              <div className="space-y-4 pt-4 border-t border-white/10 text-sm sm:text-base text-[#FAF8F4]/85 leading-relaxed font-light">
-                {activeItem.content.map((paragraph, idx) => (
-                  <p key={idx}>{paragraph}</p>
-                ))}
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-[#17130F] border-t border-[#B89554]/30 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <span className="text-xs text-[#FAF8F4]/60">
-                Advocacia Nicolau · Publicações Oficiais
-              </span>
-
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-[#CBA86B] text-[#17130F] hover:bg-[#D6B779] text-xs font-semibold tracking-wide transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Esclarecer dúvidas</span>
-                </a>
-                <button
-                  onClick={closeModal}
-                  className="px-5 py-2.5 rounded-full border border-white/20 text-[#FAF8F4] hover:bg-white/10 text-xs font-semibold transition-colors"
-                >
-                  Fechar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
       {/* Bottom Footer */}
       <footer className="bg-[#100D0B] border-t border-[#B89554]/25 py-8 px-4 text-center text-xs text-[#FAF8F4]/60">
@@ -407,6 +354,7 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
           </div>
 
           <button
+            type="button"
             onClick={onBackToHome}
             className="text-[#CBA86B] hover:underline cursor-pointer"
           >

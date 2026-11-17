@@ -107,7 +107,7 @@ export const Hero: React.FC<HeroProps> = ({
             </p>
 
             {/* Button 'Entre em contato' (Direto para o WhatsApp) */}
-            <div>
+            <div className="flex flex-col items-start gap-7">
               <a
                 href={whatsappUrl}
                 target="_blank"
@@ -121,34 +121,35 @@ export const Hero: React.FC<HeroProps> = ({
                 {/* Ambient pulsing glow behind button */}
                 <span className="absolute -inset-1 rounded-full bg-[#CBA86B]/30 blur-md group-hover:bg-[#CBA86B]/50 transition-all pointer-events-none" />
               </a>
-            </div>
-          </div>
 
-          {/* Right Column: Floating Badge (DESDE 1978 EM GUARAPUAVA/PR) */}
-          <div className="lg:col-span-4 flex justify-start lg:justify-end items-end pt-8 lg:pt-48">
-            <div className="flex items-center gap-4 pl-4 border-l border-[#B89554]/70 bg-[#17130F]/40 backdrop-blur-sm py-2 pr-4">
-              <div className="flex flex-col">
-                <span
-                  className="text-[10px] tracking-[0.25em] uppercase text-[#D6B779] font-medium"
-                  style={{ fontFamily: "'Cinzel', serif" }}
-                >
-                  DESDE
-                </span>
-                <span
-                  className="text-3xl sm:text-4xl font-serif font-bold text-[#FAF8F4] leading-none my-1 tracking-wider"
-                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-                >
-                  1978
-                </span>
-                <span
-                  className="text-[9px] sm:text-[10px] tracking-[0.25em] uppercase text-[#FAF8F4]/85 font-medium"
-                  style={{ fontFamily: "'Cinzel', serif" }}
-                >
-                  GUARAPUAVA / PR
-                </span>
+              {/* Badge (DESDE 1978 / GUARAPUAVA / PR) below the button */}
+              <div className="inline-flex items-center gap-4 pl-4 border-l border-[#B89554]/70 bg-[#17130F]/55 backdrop-blur-sm py-2.5 pr-5">
+                <div className="flex flex-col">
+                  <span
+                    className="text-[10px] tracking-[0.25em] uppercase text-[#D6B779] font-medium"
+                    style={{ fontFamily: "'Cinzel', serif" }}
+                  >
+                    DESDE
+                  </span>
+                  <span
+                    className="text-3xl sm:text-4xl font-serif font-bold text-[#FAF8F4] leading-none my-1 tracking-wider"
+                    style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                  >
+                    1978
+                  </span>
+                  <span
+                    className="text-[9px] sm:text-[10px] tracking-[0.25em] uppercase text-[#FAF8F4]/85 font-medium"
+                    style={{ fontFamily: "'Cinzel', serif" }}
+                  >
+                    GUARAPUAVA / PR
+                  </span>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Right Column kept open so the Goddess Themis artwork remains unobstructed */}
+          <div className="hidden lg:block lg:col-span-4" aria-hidden="true" />
         </div>
       </div>
     </section>

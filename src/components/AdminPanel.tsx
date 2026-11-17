@@ -47,21 +47,13 @@ import {
   ContactInfo,
   HeroSettings,
   Lawyer,
-  initialContactInfo,
-  initialHeroSettings,
-  articles as defaultArticles,
-  lawyers as defaultLawyers,
-  HighlightItem,
-  getStoredHighlights,
-  saveStoredHighlights,
   AnnouncementItem,
+  PublicationType,
   initialAnnouncementIds,
   ClientLead,
   getStoredClientLeads,
   saveStoredClientLeads,
-  CorporateSettings,
-  getStoredCorporateSettings,
-  saveStoredCorporateSettings,
+  buildGoogleMapsEmbedUrl,
 } from '../data/officeData';
 import { Logo } from './Logo';
 
@@ -77,14 +69,13 @@ interface AdminPanelProps {
   onUpdateLawyers: (updated: Lawyer[]) => void;
   onUpdateAnnouncements: (updated: AnnouncementItem[]) => boolean | void;
   onOpenAnnouncementsPage?: () => void;
+  onOpenPublication?: (id: string) => void;
   onExit: () => void;
 }
 
 type AdminSection =
   | 'dashboard'
-  | 'corporate'
   | 'announcements'
-  | 'articles'
   | 'destaques'
   | 'hero'
   | 'lawyers'
@@ -327,6 +318,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onUpdateLawyers,
   onUpdateAnnouncements,
   onOpenAnnouncementsPage,
+  onOpenPublication,
   onExit,
 }) => {
   // Authentication State
@@ -395,11 +387,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setPinInput('');
   };
 
-  // State: Highlights (Destaques & Notícias)
-  const [highlights, setHighlights] = useState<HighlightItem[]>(() => getStoredHighlights());
-  const [editingHighlight, setEditingHighlight] = useState<HighlightItem | null>(null);
-
-  // State: Announcements (Comunicados Oficiais) controlled by App.tsx
+  // State: Announcements / Publications controlled by App.tsx
   const announcements = announcementsList;
   const [editingAnnouncement, setEditingAnnouncement] = useState<AnnouncementItem | null>(null);
   const [isNewAnnouncementModalOpen, setIsNewAnnouncementModalOpen] = useState(false);
@@ -408,9 +396,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [replacingFeaturedSlotId, setReplacingFeaturedSlotId] = useState<string | null>(null);
   const [destaquesSearch, setDestaquesSearch] = useState('');
   const [destaquesFilter, setDestaquesFilter] = useState<'all' | 'new' | 'featured' | 'unfeatured'>('all');
-
-  // State: Corporate Page Settings
-  const [corporateForm, setCorporateForm] = useState<CorporateSettings>(() => getStoredCorporateSettings());
+  const [pubFilterType, setPubFilterType] = useState<string>('all');
+  const [pubSearch, setPubSearch] = useState('');
 
   // State: Client Leads (Atendimentos & Mensagens)
   const [leads, setLeads] = useState<ClientLead[]>(() => getStoredClientLeads());
@@ -531,16 +518,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     showToast('Perfil e foto do advogado atualizados com sucesso!');
   };
 
-  // Handlers for Highlights
-  const handleSaveHighlight = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingHighlight) return;
-    const updated = highlights.map((h) => (h.id === editingHighlight.id ? editingHighlight : h));
-    setHighlights(updated);
-    saveStoredHighlights(updated);
-    setEditingHighlight(null);
-    showToast('Destaque atualizado com sucesso!');
-  };
 
   const isNewlyRegisteredAnnouncement = (item: AnnouncementItem) =>
     !initialAnnouncementIds.has(item.id);
@@ -574,14 +551,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     });
   }, [orderedAllForDestaques, destaquesSearch, destaquesFilter]);
 
-  // Handlers for Announcements & Featured Highlights
+  // Handlers for Publications (Artigos, Notícias & Comunicados)
   const handleOpenNewAnnouncement = (featuredByDefault = true, replaceSlotId: string | null = null) => {
     setReplacingFeaturedSlotId(replaceSlotId);
     setEditingAnnouncement({
-      id: `com-${Date.now()}`,
+      id: `pub-${Date.now()}`,
+      publicationType: 'Comunicado Institucional',
       tag: 'Nota Oficial',
       title: '',
       date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+      author: 'Advocacia Nicolau',
+      readTime: '3 min de leitura',
       image: '/team_juri.webp',
       excerpt: '',
       content: [''],
@@ -594,9 +574,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     const cleanedContent = item.content.map((p) => p.trim()).filter((p) => p.length > 0);
     const normalizedItem: AnnouncementItem = {
       ...item,
+      publicationType: item.publicationType || 'Comunicado Institucional',
       title: item.title.trim(),
       tag: item.tag.trim() || 'Nota Oficial',
       date: item.date.trim() || new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+      author: (item.author || '').trim() || 'Advocacia Nicolau',
+      readTime: (item.readTime || '').trim() || '3 min de leitura',
       image: item.image.trim() || '/team_juri.webp',
       excerpt: item.excerpt.trim(),
       content: cleanedContent.length > 0 ? cleanedContent : [item.excerpt.trim() || item.title.trim()],
@@ -608,7 +591,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     if (exists) {
       updated = announcements.map((a) => (a.id === normalizedItem.id ? normalizedItem : a));
     } else if (replacingFeaturedSlotId) {
-      // Replace the chosen featured slot in exact position and unfeature the old one
       const slotIndex = announcements.findIndex((a) => a.id === replacingFeaturedSlotId);
       const unfeaturedList = announcements.map((a) =>
         a.id === replacingFeaturedSlotId ? { ...a, featured: false } : a
@@ -630,10 +612,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
     showToast(
       exists
-        ? 'Comunicado atualizado e salvo na Página de Comunicados!'
+        ? 'Publicação atualizada com página individual!'
         : replacingFeaturedSlotId
-        ? 'Nova notícia publicada e colocada em destaque!'
-        : 'Novo comunicado publicado na Página de Comunicados!',
+        ? 'Nova publicação criada e colocada em destaque!'
+        : 'Nova publicação cadastrada e pronta em Publicações!',
       'success',
       true
     );
@@ -778,13 +760,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     showToast(`Status atualizado para "${newStatus}".`);
   };
 
-  // Handlers for Corporate Page
-  const handleSaveCorporate = (e: React.FormEvent) => {
-    e.preventDefault();
-    saveStoredCorporateSettings(corporateForm);
-    showToast('Configurações da Página Empresarial salvas com sucesso!');
-  };
-
   // Handlers for Hero
   const handleSaveHero = (e: React.FormEvent) => {
     e.preventDefault();
@@ -795,8 +770,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // Handlers for Contact Info
   const handleSaveContact = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateContactInfo(contactForm);
-    showToast('Dados de contato e localização atualizados com sucesso!');
+    const normalizedContact: ContactInfo = {
+      ...contactForm,
+      whatsappNumberDigits: contactForm.whatsappNumberDigits.replace(/\D/g, '') || '5542999771939',
+      instagramUrl:
+        (contactForm.instagramUrl || '').trim() ||
+        'https://www.instagram.com/advocacia.nicolau/',
+      googleMapsUrl:
+        (contactForm.googleMapsUrl || '').trim() ||
+        buildGoogleMapsEmbedUrl(contactForm.address, contactForm.city, contactForm.state, contactForm.cep),
+    };
+    setContactForm(normalizedContact);
+    onUpdateContactInfo(normalizedContact);
+    showToast('Dados de contato, horários e localização atualizados com sucesso!');
   };
 
   // Handlers for PIN Change
@@ -940,7 +926,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               }}
               className="px-3 py-1 rounded-lg bg-[#CBA86B] text-[#17130F] hover:bg-[#D6B779] text-xs font-bold transition-colors cursor-pointer"
             >
-              Ver Página de Comunicados →
+              Ver Página de Publicações →
             </button>
           )}
         </div>
@@ -1026,27 +1012,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
             <div className="pt-2 pb-1 px-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Páginas Secundárias
+                Conteúdo &amp; Publicações
               </span>
             </div>
-
-            <button
-              onClick={() => {
-                setActiveSection('corporate');
-                setMobileSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeSection === 'corporate'
-                  ? 'bg-[#17130F] text-[#FAF8F4] shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Building2 className="w-4 h-4 text-[#CBA86B]" />
-                <span>Página Empresarial</span>
-              </div>
-              <ChevronRight className="w-3.5 h-3.5 opacity-50" />
-            </button>
 
             <button
               onClick={() => {
@@ -1060,39 +1028,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <BellRing className="w-4 h-4 text-[#CBA86B]" />
-                <span>Página Comunicados</span>
+                <FileText className="w-4 h-4 text-[#CBA86B]" />
+                <span>Publicações</span>
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#8C6F36]/15 text-[#8C6F36] font-bold">
                 {announcements.length}
               </span>
             </button>
-
-            <button
-              onClick={() => {
-                setActiveSection('articles');
-                setMobileSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeSection === 'articles'
-                  ? 'bg-[#17130F] text-[#FAF8F4] shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <FileText className="w-4 h-4 text-[#CBA86B]" />
-                <span>Produção Técnica</span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#8C6F36]/15 text-[#8C6F36] font-bold">
-                {articlesList.length}
-              </span>
-            </button>
-
-            <div className="pt-2 pb-1 px-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Página Principal
-              </span>
-            </div>
 
             <button
               onClick={() => {
@@ -1107,12 +1049,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             >
               <div className="flex items-center gap-2.5">
                 <Sparkles className="w-4 h-4 text-[#CBA86B]" />
-                <span>Destaques & Pauta</span>
+                <span>Destaques na Home</span>
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#8C6F36]/15 text-[#8C6F36] font-bold">
                 {featuredAnnouncements.length}
               </span>
             </button>
+
+            <div className="pt-2 pb-1 px-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Institucional
+              </span>
+            </div>
 
             <button
               onClick={() => {
@@ -1246,14 +1194,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
               >
                 {activeSection === 'dashboard' && 'Visão Geral & Métricas'}
-                {activeSection === 'corporate' && 'Página Empresarial & Societário'}
-                {activeSection === 'destaques' && 'Destaques & Notícias em Pauta'}
-                {activeSection === 'announcements' && 'Comunicados Oficiais do Escritório'}
-                {activeSection === 'articles' && 'Produção Técnica & Artigos'}
+                {activeSection === 'destaques' && 'Destaques na Página Inicial'}
+                {activeSection === 'announcements' && 'Publicações (Artigos, Notícias & Comunicados)'}
                 {activeSection === 'hero' && 'Textos da Home & Slogan'}
                 {activeSection === 'lawyers' && 'Corpo Jurídico & Advogados'}
                 {activeSection === 'leads' && 'Atendimentos & Solicitações de Clientes'}
-                {activeSection === 'contact' && 'Informações de Contato & Sede'}
+                {activeSection === 'contact' && 'Informações de Contato, Horários & Mapa'}
                 {activeSection === 'settings' && 'Segurança, PIN & Sistema'}
               </h1>
               <p className="text-[11px] sm:text-xs text-slate-500">
@@ -1268,33 +1214,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               Portal Online
             </span>
 
-            {activeSection === 'articles' && (
-              <button
-                onClick={handleOpenNewArticle}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#17130F] hover:bg-[#8C6F36] text-[#FAF8F4] text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Novo Artigo</span>
-              </button>
-            )}
-
-            {activeSection === 'announcements' && (
+            {(activeSection === 'announcements' || activeSection === 'destaques') && (
               <button
                 onClick={() => handleOpenNewAnnouncement(true, null)}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#17130F] hover:bg-[#8C6F36] text-[#FAF8F4] text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Novo Comunicado</span>
-              </button>
-            )}
-
-            {activeSection === 'destaques' && (
-              <button
-                onClick={() => handleOpenNewAnnouncement(true, null)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#17130F] hover:bg-[#8C6F36] text-[#FAF8F4] text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Nova Notícia em Destaque</span>
+                <span>Nova Publicação</span>
               </button>
             )}
           </div>
@@ -1312,12 +1238,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between">
                   <div>
                     <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">
-                      Produção Técnica
+                      Total de Publicações
                     </span>
                     <h3 className="text-2xl sm:text-3xl font-serif text-[#17130F] font-bold mt-1">
-                      {articlesList.length}
+                      {announcements.length}
                     </h3>
-                    <span className="text-[11px] text-[#8C6F36]">Artigos Publicados</span>
+                    <span className="text-[11px] text-[#8C6F36]">Com páginas individuais</span>
                   </div>
                   <div className="w-12 h-12 rounded-xl bg-[#B89554]/10 text-[#8C6F36] flex items-center justify-center">
                     <FileText className="w-6 h-6" />
@@ -1327,12 +1253,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between">
                   <div>
                     <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">
-                      Destaques
+                      Destaques na Home
                     </span>
                     <h3 className="text-2xl sm:text-3xl font-serif text-[#17130F] font-bold mt-1">
                       {featuredAnnouncements.length}
                     </h3>
-                    <span className="text-[11px] text-emerald-600">Ativos na Página Principal</span>
+                    <span className="text-[11px] text-emerald-600">Em exibição na inicial</span>
                   </div>
                   <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                     <Sparkles className="w-6 h-6" />
@@ -1342,14 +1268,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between">
                   <div>
                     <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">
-                      Comunicados
+                      Conteúdo Demo
                     </span>
                     <h3 className="text-2xl sm:text-3xl font-serif text-[#17130F] font-bold mt-1">
-                      {announcements.length}
+                      {announcements.filter((a) => initialAnnouncementIds.has(a.id)).length}
                     </h3>
-                    <span className="text-[11px] text-blue-600">Notas Oficiais</span>
+                    <span className="text-[11px] text-amber-600">Para revisão / substituição</span>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                     <BellRing className="w-6 h-6" />
                   </div>
                 </div>
@@ -1362,11 +1288,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <h3 className="text-2xl sm:text-3xl font-serif text-[#17130F] font-bold mt-1">
                       {leads.length}
                     </h3>
-                    <span className="text-[11px] text-amber-600 font-medium">
+                    <span className="text-[11px] text-blue-600 font-medium">
                       {leads.filter((l) => l.status === 'Novo').length} novos recebidos
                     </span>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                     <Inbox className="w-6 h-6" />
                   </div>
                 </div>
@@ -1440,18 +1366,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                     <div className="space-y-2">
                       <button
-                        onClick={() => setActiveSection('destaques')}
+                        onClick={() => setActiveSection('announcements')}
                         className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/70 text-xs font-medium text-slate-800 flex items-center justify-between transition-colors cursor-pointer"
                       >
-                        <span>📰 Atualizar Matérias de Destaques (2ª Sessão)</span>
+                        <span>✍️ Gerenciar e Inserir Publicações</span>
                         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                       </button>
 
                       <button
-                        onClick={() => setActiveSection('articles')}
+                        onClick={() => setActiveSection('destaques')}
                         className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/70 text-xs font-medium text-slate-800 flex items-center justify-between transition-colors cursor-pointer"
                       >
-                        <span>✍️ Publicar Novo Artigo na Produção Técnica</span>
+                        <span>📰 Escolher Destaques da Página Inicial</span>
                         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                       </button>
 
@@ -1467,7 +1393,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         onClick={() => setActiveSection('contact')}
                         className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/70 text-xs font-medium text-slate-800 flex items-center justify-between transition-colors cursor-pointer"
                       >
-                        <span>📞 Atualizar Telefones, WhatsApp e Endereço</span>
+                        <span>📞 Atualizar Endereço, Mapa, Horários e WhatsApp</span>
                         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                       </button>
                     </div>
@@ -1481,270 +1407,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* =============================================================== */}
-          {/* TAB: PÁGINA EMPRESARIAL (CONFIGURAÇÃO COMPLETA) */}
-          {/* =============================================================== */}
-          {activeSection === 'corporate' && (
-            <div className="space-y-6">
-              {/* Top Banner Card */}
-              <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#B89554]/10 border border-[#B89554]/30 text-[#8C6F36] text-[11px] uppercase tracking-wider font-semibold mb-2">
-                    <Building2 className="w-3.5 h-3.5" />
-                    <span>Página Exclusiva de Direito Empresarial</span>
-                  </div>
-                  <h3 className="text-xl font-serif text-slate-900 font-semibold">
-                    Personalização da Página Corporativa
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 max-w-xl">
-                    Configure os textos do Hero (sessão com fundo branco), os 4 pilares de atendimento e os setores econômicos assessorados pela banca.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleSaveCorporate}
-                  className="px-5 py-2.5 bg-[#8C6F36] hover:bg-[#6E5528] text-white text-xs font-semibold rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-2 shrink-0 self-start sm:self-center"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>Salvar Alterações</span>
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveCorporate} className="space-y-6">
-                {/* 1. Hero Section (White Background) */}
-                <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-sm space-y-5">
-                  <div className="border-b border-slate-100 pb-3">
-                    <h4 className="text-sm uppercase tracking-wider font-bold text-slate-900 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#8C6F36]" />
-                      Sessão Principal (Hero com Fundo Branco)
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Textos de abertura exibidos com fundo branco e contraste institucional:
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1.5">
-                        Kicker / Tag Superior
-                      </label>
-                      <input
-                        type="text"
-                        value={corporateForm.kicker}
-                        onChange={(e) => setCorporateForm({ ...corporateForm, kicker: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1.5">
-                        Texto do Botão CTA (WhatsApp)
-                      </label>
-                      <input
-                        type="text"
-                        value={corporateForm.ctaButtonText}
-                        onChange={(e) => setCorporateForm({ ...corporateForm, ctaButtonText: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1.5">
-                        Título Principal (Linha 1)
-                      </label>
-                      <input
-                        type="text"
-                        value={corporateForm.titlePart1}
-                        onChange={(e) => setCorporateForm({ ...corporateForm, titlePart1: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1.5">
-                        Destaque em Itálico Dourado
-                      </label>
-                      <input
-                        type="text"
-                        value={corporateForm.titleHighlight}
-                        onChange={(e) => setCorporateForm({ ...corporateForm, titleHighlight: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1.5">
-                      Texto Institucional / Descritivo
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={corporateForm.description}
-                      onChange={(e) => setCorporateForm({ ...corporateForm, description: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36] resize-none"
-                    />
-                  </div>
-                </div>
-
-                {/* 2. The 4 Pillars */}
-                <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-sm space-y-6">
-                  <div className="border-b border-slate-100 pb-3">
-                    <h4 className="text-sm uppercase tracking-wider font-bold text-slate-900 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#8C6F36]" />
-                      Os 4 Pilares da Assessoria Corporativa
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Edite as 4 áreas de atuação especializada, suas descrições e os tópicos de atendimento:
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {corporateForm.pillars.map((pillar, idx) => (
-                      <div
-                        key={pillar.id}
-                        className="p-5 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-[#8C6F36]">
-                            Pilar {idx + 1}
-                          </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-mono">
-                            ID: {pillar.id}
-                          </span>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] uppercase tracking-wider text-slate-600 font-semibold mb-1">
-                            Tag / Categoria
-                          </label>
-                          <input
-                            type="text"
-                            value={pillar.tag}
-                            onChange={(e) => {
-                              const updated = [...corporateForm.pillars];
-                              updated[idx].tag = e.target.value;
-                              setCorporateForm({ ...corporateForm, pillars: updated });
-                            }}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] uppercase tracking-wider text-slate-600 font-semibold mb-1">
-                            Título do Pilar
-                          </label>
-                          <input
-                            type="text"
-                            value={pillar.title}
-                            onChange={(e) => {
-                              const updated = [...corporateForm.pillars];
-                              updated[idx].title = e.target.value;
-                              setCorporateForm({ ...corporateForm, pillars: updated });
-                            }}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] uppercase tracking-wider text-slate-600 font-semibold mb-1">
-                            Resumo Curto
-                          </label>
-                          <textarea
-                            rows={2}
-                            value={pillar.shortDesc}
-                            onChange={(e) => {
-                              const updated = [...corporateForm.pillars];
-                              updated[idx].shortDesc = e.target.value;
-                              setCorporateForm({ ...corporateForm, pillars: updated });
-                            }}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-[#8C6F36] resize-none"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] uppercase tracking-wider text-slate-600 font-semibold mb-1">
-                            Pontos Detalhados (1 por linha)
-                          </label>
-                          <textarea
-                            rows={3}
-                            value={pillar.details.join('\n')}
-                            onChange={(e) => {
-                              const updated = [...corporateForm.pillars];
-                              updated[idx].details = e.target.value.split('\n').filter((l) => l.trim().length > 0);
-                              setCorporateForm({ ...corporateForm, pillars: updated });
-                            }}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 3. Sectors / Industries */}
-                <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-sm space-y-5">
-                  <div className="border-b border-slate-100 pb-3">
-                    <h4 className="text-sm uppercase tracking-wider font-bold text-slate-900 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#8C6F36]" />
-                      Setores Econômicos Atendidos
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Segmentos do agronegócio, indústria e comércio destacados na página corporativa:
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {corporateForm.industries.map((ind, idx) => (
-                      <div key={idx} className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-2">
-                        <label className="block text-[11px] uppercase tracking-wider text-slate-600 font-semibold">
-                          Nome do Setor {idx + 1}
-                        </label>
-                        <input
-                          type="text"
-                          value={ind.title}
-                          onChange={(e) => {
-                            const updated = [...corporateForm.industries];
-                            updated[idx].title = e.target.value;
-                            setCorporateForm({ ...corporateForm, industries: updated });
-                          }}
-                          className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                        />
-
-                        <label className="block text-[11px] uppercase tracking-wider text-slate-600 font-semibold pt-1">
-                          Descrição de Atuação
-                        </label>
-                        <textarea
-                          rows={2}
-                          value={ind.desc}
-                          onChange={(e) => {
-                            const updated = [...corporateForm.industries];
-                            updated[idx].desc = e.target.value;
-                            setCorporateForm({ ...corporateForm, industries: updated });
-                          }}
-                          className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-[#8C6F36] resize-none"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Bottom Action Bar */}
-                <div className="flex items-center justify-end gap-3 pt-4">
-                  <button
-                    type="submit"
-                    className="px-8 py-3.5 bg-[#17130F] hover:bg-[#8C6F36] text-[#FAF8F4] text-xs uppercase tracking-wider font-semibold rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-2"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>Salvar Todas as Alterações da Página Empresarial</span>
-                  </button>
-                </div>
-              </form>
             </div>
           )}
 
@@ -1764,7 +1426,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                   {onOpenAnnouncementsPage && (
                     <button
                       type="button"
@@ -1772,7 +1434,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
                     >
                       <ExternalLink className="w-3.5 h-3.5 text-[#8C6F36]" />
-                      <span>Ver Página Comunicados</span>
+                      <span>Ver Página Publicações</span>
                     </button>
                   )}
 
@@ -1782,7 +1444,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#8C6F36] hover:bg-[#6E5528] text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Registrar Nova Notícia</span>
+                    <span>Nova Publicação</span>
                   </button>
                 </div>
               </div>
@@ -1823,16 +1485,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               <Star className="w-3 h-3 fill-current" />
                               <span>Destaque #{idx + 1}</span>
                             </span>
-                            {isNewItem && (
+                            {isNewItem ? (
                               <span className="absolute bottom-3 left-3 px-2.5 py-0.5 rounded-full bg-amber-400 text-[#17130F] text-[10px] font-extrabold uppercase tracking-wider shadow">
                                 Novo Registrado
+                              </span>
+                            ) : (
+                              <span className="absolute bottom-3 left-3 px-2.5 py-0.5 rounded-full bg-slate-900/80 text-amber-200 text-[10px] font-semibold border border-amber-400/40">
+                                Demo · Revisar
                               </span>
                             )}
                           </div>
 
                           <div className="p-5">
                             <span className="text-[11px] text-[#8C6F36] font-medium block mb-1">
-                              {item.date}
+                              {item.publicationType || 'Publicação'} · {item.date}
                             </span>
                             <h4 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
                               {item.title}
@@ -1852,7 +1518,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 setSwapTargetAnnouncement(item);
                               }}
                               className="flex-1 min-w-[125px] px-3 py-2 bg-[#8C6F36] hover:bg-[#6E5528] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
-                              title="Trocar este destaque por outra notícia registrada"
+                              title="Trocar este destaque por outra publicação registrada"
                             >
                               <ArrowLeftRight className="w-3.5 h-3.5" />
                               <span>Trocar Notícia</span>
@@ -1909,15 +1575,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
               </div>
 
-              {/* Unified Selector: Choose WHICH Comunicados to keep as Destaque on the Home Page */}
+              {/* Unified Selector: Choose WHICH Publications to keep as Destaque on the Home Page */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm space-y-5">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                   <div>
                     <h4 className="text-base font-semibold text-slate-900">
-                      Escolher Comunicados para Destaque na Página Inicial ({announcements.length} cadastrados)
+                      Escolher Publicações para Destaque na Página Inicial ({announcements.length} cadastradas)
                     </h4>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Marque ou desmarque qualquer comunicado (incluindo todos os novos registrados) para definir o que fica em destaque na página inicial:
+                      Marque ou desmarque qualquer publicação (incluindo todas as novas registradas) para definir o que fica em destaque na página inicial:
                     </p>
                   </div>
 
@@ -1927,7 +1593,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       type="text"
                       value={destaquesSearch}
                       onChange={(e) => setDestaquesSearch(e.target.value)}
-                      placeholder="Filtrar comunicados..."
+                      placeholder="Filtrar publicações..."
                       className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                     />
                   </div>
@@ -1936,10 +1602,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 {/* Filter Pills */}
                 <div className="flex flex-wrap items-center gap-2">
                   {[
-                    { id: 'all', label: `Todos (${announcements.length})` },
+                    { id: 'all', label: `Todas (${announcements.length})` },
                     {
                       id: 'new',
-                      label: `Novos Registrados (${announcements.filter((a) => !initialAnnouncementIds.has(a.id)).length})`,
+                      label: `Novas Registradas (${announcements.filter((a) => !initialAnnouncementIds.has(a.id)).length})`,
                     },
                     {
                       id: 'featured',
@@ -1967,7 +1633,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                 {filteredSelectorAnnouncements.length === 0 ? (
                   <p className="text-xs text-slate-500 py-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    Nenhum comunicado encontrado neste filtro. Clique em &quot;Registrar Nova Notícia&quot; para adicionar um novo comunicado.
+                    Nenhuma publicação encontrada neste filtro. Clique em &quot;Nova Publicação&quot; para adicionar um conteúdo.
                   </p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -2003,7 +1669,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
                                 <span className="text-[10px] uppercase tracking-wider font-bold text-[#8C6F36]">
-                                  {item.tag}
+                                  {item.publicationType || item.tag}
                                 </span>
                                 {isNewItem && (
                                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 font-bold">
@@ -2034,75 +1700,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     })}
                   </div>
                 )}
-
-                {/* Technical Articles available to promote to home highlights */}
-                {articlesList.length > 0 && (
-                  <div className="pt-5 border-t border-slate-100 space-y-3">
-                    <h5 className="text-xs uppercase tracking-wider font-bold text-slate-500">
-                      Artigos da Produção Técnica (Promover para Destaque na Inicial)
-                    </h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      {articlesList.map((art) => {
-                        const alreadyFeaturedAsAnnouncement = announcements.some(
-                          (a) => a.id === `art-dest-${art.id}` && a.featured === true
-                        );
-                        return (
-                          <div
-                            key={art.id}
-                            className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between gap-3"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <img
-                                src={art.image}
-                                alt={art.title}
-                                className="w-14 h-12 rounded-lg object-cover shrink-0 border border-slate-200"
-                                onError={(e) => {
-                                  e.currentTarget.src = '/team_juri.webp';
-                                }}
-                              />
-                              <div className="min-w-0">
-                                <span className="text-[10px] uppercase tracking-wider font-bold text-blue-700 block">
-                                  Artigo · {art.category}
-                                </span>
-                                <h5 className="text-xs font-bold text-slate-900 line-clamp-2">{art.title}</h5>
-                                <span className="text-[11px] text-slate-500">{art.date}</span>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => handlePromoteArticleToFeatured(art)}
-                              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold shrink-0 transition-colors cursor-pointer flex items-center gap-1 ${
-                                alreadyFeaturedAsAnnouncement
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                  : 'bg-[#17130F] hover:bg-[#8C6F36] text-white'
-                              }`}
-                            >
-                              <Star className={`w-3 h-3 ${alreadyFeaturedAsAnnouncement ? 'fill-current' : 'text-[#CBA86B]'}`} />
-                              <span>{alreadyFeaturedAsAnnouncement ? 'No Destaque' : 'Destacar'}</span>
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           )}
 
           {/* =============================================================== */}
-          {/* TAB 3: COMUNICADOS OFICIAIS */}
+          {/* TAB 3: PUBLICAÇÕES UNIFICADAS (ARTIGOS, NOTÍCIAS & COMUNICADOS) */}
           {/* =============================================================== */}
           {activeSection === 'announcements' && (
             <div className="space-y-6">
               <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900">
-                    Notas Públicas & Comunicados Forenses ({announcements.length})
+                    Publicações do Escritório ({announcements.length})
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Todos os comunicados abaixo são exibidos na Página de Comunicados. Os marcados como &quot;Em Destaque&quot; também aparecem na Página Principal.
+                    Cada publicação cadastrada gera sua <strong>página individual</strong> (#publicacao/...) e aparece automaticamente na seção <strong>Publicações</strong>. Itens com o selo &quot;Demo · Revisar&quot; podem ser editados ou substituídos pelo escritório.
                   </p>
                 </div>
 
@@ -2114,7 +1727,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
                     >
                       <ExternalLink className="w-3.5 h-3.5 text-[#8C6F36]" />
-                      <span>Ver Página de Comunicados</span>
+                      <span>Ver Página Publicações</span>
                     </button>
                   )}
 
@@ -2124,199 +1737,165 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#8C6F36] hover:bg-[#6E5528] text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Adicionar Comunicado</span>
+                    <span>Nova Publicação</span>
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {announcements.map((item) => {
-                  const isNewItem = isNewlyRegisteredAnnouncement(item);
-                  return (
-                    <div
-                      key={item.id}
-                      className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="h-44 relative overflow-hidden bg-slate-900">
-                          <img
-                            src={item.image}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.src = '/team_juri.webp';
-                            }}
-                          />
-                          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#967444] text-white text-[10px] font-bold">
-                            {item.tag}
-                          </span>
-                          {item.featured && (
-                            <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center gap-1 shadow">
-                              <Star className="w-3 h-3 fill-current" />
-                              <span>Em Destaque</span>
-                            </span>
-                          )}
-                          {isNewItem && (
-                            <span className="absolute bottom-3 left-3 px-2.5 py-0.5 rounded-full bg-amber-400 text-[#17130F] text-[10px] font-extrabold uppercase tracking-wider shadow">
-                              Novo
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="p-5">
-                          <span className="text-[11px] text-[#8C6F36] font-medium block mb-1">
-                            {item.date}
-                          </span>
-                          <h4 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
-                            {item.title}
-                          </h4>
-                          <p className="text-xs text-slate-500 mt-2 line-clamp-3">
-                            {item.excerpt}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteAnnouncement(item.id, item.title)}
-                            className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                            title="Excluir comunicado"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleToggleAnnouncementFeatured(item.id)}
-                            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
-                              item.featured
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                                : 'bg-white text-slate-600 border border-slate-200 hover:border-[#8C6F36] hover:text-[#8C6F36]'
-                            }`}
-                            title={item.featured ? 'Remover dos destaques da home' : 'Colocar nos destaques da home'}
-                          >
-                            <Star className={`w-3 h-3 ${item.featured ? 'fill-current' : ''}`} />
-                            <span>{item.featured ? 'No Destaque' : 'Destacar'}</span>
-                          </button>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setReplacingFeaturedSlotId(null);
-                            setEditingAnnouncement(item);
-                            setIsNewAnnouncementModalOpen(true);
-                          }}
-                          className="px-4 py-2 bg-[#17130F] hover:bg-[#8C6F36] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>Editar</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* =============================================================== */}
-          {/* TAB 4: PRODUÇÃO TÉCNICA (ARTIGOS) */}
-          {/* =============================================================== */}
-          {activeSection === 'articles' && (
-            <div className="space-y-6">
-              {/* Search and Category Filters */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+              {/* Filter & Search Bar */}
+              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="relative flex-1 max-w-md">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    value={articleSearch}
-                    onChange={(e) => setArticleSearch(e.target.value)}
-                    placeholder="Buscar artigo por título ou autor..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#8C6F36]"
+                    value={pubSearch}
+                    onChange={(e) => setPubSearch(e.target.value)}
+                    placeholder="Buscar publicação por título, categoria ou autor..."
+                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                   />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  {['all', 'Direito Criminal', 'Direito Civil', 'Direito de Família'].map((cat) => (
+                  {[
+                    { id: 'all', label: 'Todos os Tipos' },
+                    { id: 'Artigo Jurídico', label: 'Artigos Jurídicos' },
+                    { id: 'Notícia', label: 'Notícias' },
+                    { id: 'Comunicado Institucional', label: 'Comunicados' },
+                  ].map((tab) => (
                     <button
-                      key={cat}
-                      onClick={() => setSelectedArticleCategory(cat)}
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setPubFilterType(tab.id)}
                       className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                        selectedArticleCategory === cat
+                        pubFilterType === tab.id
                           ? 'bg-[#17130F] text-[#FAF8F4]'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
-                      {cat === 'all' ? 'Todas as Áreas' : cat}
+                      {tab.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Articles Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredArticles.map((article) => (
-                  <div
-                    key={article.id}
-                    className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow"
-                  >
-                    <div>
-                      <div className="h-44 relative overflow-hidden bg-slate-900">
-                        <img
-                          src={article.image}
-                          alt={article.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#17130F] text-[#FAF8F4] text-[10px] font-bold border border-[#B89554]/40">
-                          {article.category}
-                        </span>
-                      </div>
-
-                      <div className="p-5">
-                        <span className="text-[11px] text-[#8C6F36] font-medium block mb-1">
-                          {article.date} · {article.readTime}
-                        </span>
-                        <h4 className="text-base font-bold text-slate-900 leading-snug line-clamp-2">
-                          {article.title}
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-2 line-clamp-3">
-                          {article.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => setPreviewArticle(article)}
-                          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
-                          title="Pré-visualizar"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteArticle(article.id, article.title)}
-                          className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      <button
-                        onClick={() => handleOpenEditArticle(article)}
-                        className="px-4 py-2 bg-[#17130F] hover:bg-[#8C6F36] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {announcements
+                  .filter((item) => {
+                    const typeVal = item.publicationType || 'Comunicado Institucional';
+                    const matchesType = pubFilterType === 'all' || typeVal === pubFilterType;
+                    const q = pubSearch.toLowerCase().trim();
+                    const matchesSearch =
+                      !q ||
+                      item.title.toLowerCase().includes(q) ||
+                      item.tag.toLowerCase().includes(q) ||
+                      (item.author || '').toLowerCase().includes(q);
+                    return matchesType && matchesSearch;
+                  })
+                  .map((item) => {
+                    const isNewItem = isNewlyRegisteredAnnouncement(item);
+                    return (
+                      <div
+                        key={item.id}
+                        className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Editar</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                        <div>
+                          <div className="h-44 relative overflow-hidden bg-slate-900">
+                            <img
+                              src={item.image}
+                              alt={item.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = '/team_juri.webp';
+                              }}
+                            />
+                            <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#967444] text-white text-[10px] font-bold">
+                              {item.tag}
+                            </span>
+                            {item.featured && (
+                              <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center gap-1 shadow">
+                                <Star className="w-3 h-3 fill-current" />
+                                <span>Em Destaque</span>
+                              </span>
+                            )}
+                            {isNewItem ? (
+                              <span className="absolute bottom-3 left-3 px-2.5 py-0.5 rounded-full bg-amber-400 text-[#17130F] text-[10px] font-extrabold uppercase tracking-wider shadow">
+                                Novo
+                              </span>
+                            ) : (
+                              <span className="absolute bottom-3 left-3 px-2.5 py-0.5 rounded-full bg-slate-900/85 text-amber-200 text-[10px] font-semibold border border-amber-400/40">
+                                Demo · Revisar / Substituir
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="p-5">
+                            <span className="text-[11px] text-[#8C6F36] font-medium block mb-1">
+                              {item.publicationType || 'Comunicado Institucional'} · {item.date}
+                            </span>
+                            <h4 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
+                              {item.title}
+                            </h4>
+                            <p className="text-xs text-slate-500 mt-2 line-clamp-3">
+                              {item.excerpt}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-2.5">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAnnouncement(item.id, item.title)}
+                                className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="Excluir publicação"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleToggleAnnouncementFeatured(item.id)}
+                                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+                                  item.featured
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                                    : 'bg-white text-slate-600 border border-slate-200 hover:border-[#8C6F36] hover:text-[#8C6F36]'
+                                }`}
+                                title={item.featured ? 'Remover dos destaques da home' : 'Colocar nos destaques da home'}
+                              >
+                                <Star className={`w-3 h-3 ${item.featured ? 'fill-current' : ''}`} />
+                                <span>{item.featured ? 'No Destaque' : 'Destacar'}</span>
+                              </button>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReplacingFeaturedSlotId(null);
+                                setEditingAnnouncement(item);
+                                setIsNewAnnouncementModalOpen(true);
+                              }}
+                              className="px-3.5 py-2 bg-[#17130F] hover:bg-[#8C6F36] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Editar</span>
+                            </button>
+                          </div>
+
+                          {onOpenPublication && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenPublication(item.id)}
+                              className="w-full py-1.5 px-3 rounded-lg bg-white border border-slate-200 hover:border-[#8C6F36] text-[11px] font-semibold text-slate-700 hover:text-[#8C6F36] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              <span>Abrir Página Individual</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           )}
@@ -2633,12 +2212,45 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                   <div>
                     <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                      WhatsApp Comercial
+                      WhatsApp (Exibição)
                     </label>
                     <input
                       type="text"
                       value={contactForm.whatsapp}
                       onChange={(e) => setContactForm({ ...contactForm, whatsapp: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
+                      WhatsApp Link (Apenas Dígitos DDI+DDD)
+                    </label>
+                    <input
+                      type="text"
+                      value={contactForm.whatsappNumberDigits}
+                      onChange={(e) =>
+                        setContactForm({
+                          ...contactForm,
+                          whatsappNumberDigits: e.target.value.replace(/\D/g, ''),
+                        })
+                      }
+                      placeholder="5542999771939"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
+                      Link do Instagram
+                    </label>
+                    <input
+                      type="url"
+                      value={contactForm.instagramUrl || ''}
+                      onChange={(e) => setContactForm({ ...contactForm, instagramUrl: e.target.value })}
+                      placeholder="https://www.instagram.com/advocacia.nicolau/"
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                     />
                   </div>
@@ -2678,22 +2290,55 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <input
                       type="text"
                       value={contactForm.address}
-                      onChange={(e) => setContactForm({ ...contactForm, address: e.target.value })}
+                      onChange={(e) => {
+                        const nextAddr = e.target.value;
+                        setContactForm({
+                          ...contactForm,
+                          address: nextAddr,
+                          googleMapsUrl: buildGoogleMapsEmbedUrl(nextAddr, contactForm.city, contactForm.state),
+                        });
+                      }}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                      Cidade / UF
+                      CEP
                     </label>
                     <input
                       type="text"
-                      value={`${contactForm.city} - ${contactForm.state}`}
-                      readOnly
-                      className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-600 cursor-not-allowed"
+                      value={contactForm.cep}
+                      onChange={(e) => setContactForm({ ...contactForm, cep: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold">
+                      URL Incorporada do Google Maps
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContactForm({
+                          ...contactForm,
+                          googleMapsUrl: buildGoogleMapsEmbedUrl(contactForm.address, contactForm.city, contactForm.state),
+                        })
+                      }
+                      className="text-[11px] font-semibold text-[#8C6F36] hover:underline cursor-pointer"
+                    >
+                      Atualizar mapa pelo endereço
+                    </button>
+                  </div>
+                  <input
+                    type="url"
+                    value={contactForm.googleMapsUrl}
+                    onChange={(e) => setContactForm({ ...contactForm, googleMapsUrl: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#8C6F36]"
+                  />
                 </div>
 
                 <div className="pt-4 flex justify-end">
@@ -2775,9 +2420,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       const dataToExport = {
                         contactInfo,
                         heroSettings,
-                        articlesList,
-                        highlights,
-                        announcements,
+                        publications: announcements,
                         lawyersList,
                         exportDate: new Date().toISOString(),
                       };
@@ -2919,112 +2562,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {/* ------------------------------------------------------------------- */}
-      {/* MODAL: EDIT HIGHLIGHT */}
-      {/* ------------------------------------------------------------------- */}
-      {editingHighlight && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" role="dialog" aria-modal="true">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900">
-                Editar Notícia de Destaque
-              </h3>
-              <button onClick={() => setEditingHighlight(null)} className="p-1 rounded-full text-slate-400 hover:text-slate-700">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveHighlight} className="p-6 overflow-y-auto space-y-4">
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                  Título da Notícia
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editingHighlight.title}
-                  onChange={(e) => setEditingHighlight({ ...editingHighlight, title: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                    Tag / Categoria
-                  </label>
-                  <input
-                    type="text"
-                    value={editingHighlight.tagLabel}
-                    onChange={(e) => setEditingHighlight({ ...editingHighlight, tagLabel: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                    Data
-                  </label>
-                  <input
-                    type="text"
-                    value={editingHighlight.date}
-                    onChange={(e) => setEditingHighlight({ ...editingHighlight, date: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                  Subtítulo
-                </label>
-                <input
-                  type="text"
-                  value={editingHighlight.subtitle || ''}
-                  onChange={(e) => setEditingHighlight({ ...editingHighlight, subtitle: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                />
-              </div>
-
-              {/* Image Attachment Picker */}
-              <ImageAttachmentPicker
-                label="Imagem do Destaque *"
-                value={editingHighlight.image || '/team_juri.webp'}
-                onChange={(img) => setEditingHighlight({ ...editingHighlight, image: img })}
-                helperText="Anexe uma foto para ilustrar esta matéria de destaque."
-              />
-
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                  Texto da Matéria
-                </label>
-                <textarea
-                  rows={4}
-                  value={editingHighlight.content.join('\n\n')}
-                  onChange={(e) => setEditingHighlight({ ...editingHighlight, content: e.target.value.split('\n\n') })}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setEditingHighlight(null)}
-                  className="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl text-xs font-semibold bg-[#17130F] hover:bg-[#8C6F36] text-white transition-colors shadow-sm"
-                >
-                  Salvar Notícia
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ------------------------------------------------------------------- */}
       {/* MODAL: SWAP FEATURED NEWS WITH REGISTERED PUBLICATIONS */}
@@ -3206,7 +2743,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       )}
 
       {/* ------------------------------------------------------------------- */}
-      {/* MODAL: EDIT / NEW ANNOUNCEMENT */}
+      {/* MODAL: EDIT / NEW PUBLICATION */}
       {/* ------------------------------------------------------------------- */}
       {isNewAnnouncementModalOpen && editingAnnouncement && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" role="dialog" aria-modal="true">
@@ -3214,8 +2751,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900">
                 {announcements.some((a) => a.id === editingAnnouncement.id)
-                  ? 'Editar Comunicado Oficial'
-                  : 'Novo Comunicado Oficial'}
+                  ? 'Editar Publicação'
+                  : 'Nova Publicação'}
               </h3>
               <button
                 type="button"
@@ -3238,31 +2775,54 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             >
               <div>
                 <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                  Título do Comunicado *
+                  Título da Publicação *
                 </label>
                 <input
                   type="text"
                   required
                   value={editingAnnouncement.title}
                   onChange={(e) => setEditingAnnouncement({ ...editingAnnouncement, title: e.target.value })}
-                  placeholder="Ex: Novo Horário de Atendimento ou Nota Oficial..."
+                  placeholder="Ex: Novo artigo, notícia ou comunicado oficial..."
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                    Tag / Categoria
+                    Tipo de Publicação
+                  </label>
+                  <select
+                    value={editingAnnouncement.publicationType || 'Comunicado Institucional'}
+                    onChange={(e) =>
+                      setEditingAnnouncement({
+                        ...editingAnnouncement,
+                        publicationType: e.target.value as PublicationType,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
+                  >
+                    <option value="Comunicado Institucional">Comunicado Institucional</option>
+                    <option value="Artigo Jurídico">Artigo Jurídico</option>
+                    <option value="Notícia">Notícia</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
+                    Tag / Área Jurídica
                   </label>
                   <input
                     type="text"
                     value={editingAnnouncement.tag}
                     onChange={(e) => setEditingAnnouncement({ ...editingAnnouncement, tag: e.target.value })}
+                    placeholder="Ex: Direito Criminal, Nota Oficial..."
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
                     Data
@@ -3274,11 +2834,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
+                    Autor
+                  </label>
+                  <input
+                    type="text"
+                    value={editingAnnouncement.author || 'Advocacia Nicolau'}
+                    onChange={(e) => setEditingAnnouncement({ ...editingAnnouncement, author: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
+                    Leitura
+                  </label>
+                  <input
+                    type="text"
+                    value={editingAnnouncement.readTime || '3 min de leitura'}
+                    onChange={(e) => setEditingAnnouncement({ ...editingAnnouncement, readTime: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
+                  />
+                </div>
               </div>
 
               {/* Image Attachment Picker */}
               <ImageAttachmentPicker
-                label="Imagem do Comunicado Oficial *"
+                label="Imagem de Capa da Publicação *"
                 value={editingAnnouncement.image || '/team_juri.webp'}
                 onChange={(img) => setEditingAnnouncement({ ...editingAnnouncement, image: img })}
                 helperText="Anexe uma foto do seu dispositivo ou escolha das imagens do escritório."
@@ -3296,36 +2880,37 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 />
                 <div>
                   <span className="text-xs font-bold text-slate-900 block">
-                    Exibir nos Destaques da Página Principal
+                    Exibir nos Destaques da Página Inicial
                   </span>
                   <span className="text-[11px] text-slate-500">
-                    Além de ir para a Página de Comunicados, aparecerá na vitrine da página inicial.
+                    Gera página individual e aparece tanto em Publicações quanto na vitrine da página inicial.
                   </span>
                 </div>
               </label>
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                  Resumo / Excerpt
+                  Resumo / Chamada
                 </label>
                 <textarea
                   rows={2}
                   value={editingAnnouncement.excerpt}
                   onChange={(e) => setEditingAnnouncement({ ...editingAnnouncement, excerpt: e.target.value })}
-                  placeholder="Breve resumo exibido no card e na leitura..."
+                  placeholder="Breve resumo exibido no card e no cabeçalho da página..."
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                 />
               </div>
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
-                  Conteúdo Completo do Comunicado
+                  Texto Completo da Publicação *
                 </label>
                 <textarea
-                  rows={5}
+                  rows={6}
+                  required
                   value={editingAnnouncement.content.join('\n\n')}
                   onChange={(e) => setEditingAnnouncement({ ...editingAnnouncement, content: e.target.value.split('\n\n') })}
-                  placeholder="Digite o texto completo da nota oficial..."
+                  placeholder="Digite o texto completo (separe parágrafos com uma linha em branco)..."
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                 />
               </div>
@@ -3345,7 +2930,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   type="submit"
                   className="px-6 py-2.5 rounded-xl text-xs font-semibold bg-[#17130F] hover:bg-[#8C6F36] text-white transition-colors shadow-sm cursor-pointer"
                 >
-                  Salvar Comunicado
+                  Salvar Publicação
                 </button>
               </div>
             </form>

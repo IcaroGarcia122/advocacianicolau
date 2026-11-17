@@ -7,9 +7,7 @@ interface HeaderProps {
   contactInfo: ContactInfo;
   activeSection: string;
   onNavigate: (sectionId: string) => void;
-  onOpenTechnicalPage?: () => void;
-  onOpenCorporatePage?: () => void;
-  onOpenAnnouncementsPage?: () => void;
+  onOpenPublicationsPage?: () => void;
   onOpenAdmin?: () => void;
 }
 
@@ -17,9 +15,6 @@ export const Header: React.FC<HeaderProps> = ({
   contactInfo,
   activeSection,
   onNavigate,
-  onOpenTechnicalPage,
-  onOpenCorporatePage,
-  onOpenAnnouncementsPage,
   onOpenAdmin,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -39,18 +34,6 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleNavClick = (id: string) => {
     setMobileMenuOpen(false);
-    if (id === 'empresarial' && onOpenCorporatePage) {
-      onOpenCorporatePage();
-      return;
-    }
-    if (id === 'producao-tecnica' && onOpenTechnicalPage) {
-      onOpenTechnicalPage();
-      return;
-    }
-    if (id === 'pagina-comunicados' && onOpenAnnouncementsPage) {
-      onOpenAnnouncementsPage();
-      return;
-    }
     onNavigate(id);
   };
 
@@ -58,20 +41,18 @@ export const Header: React.FC<HeaderProps> = ({
     'Olá! Gostaria de falar com a equipe da Advocacia Nicolau.'
   )}`;
 
-  // Navigation links on the LEFT of the logo (Contato removed as requested)
+  // Left of centered logo: Início | O Escritório | Nossa Equipe
   const leftNavLinks = [
     { id: 'inicio', label: 'Início' },
-    { id: 'areas', label: 'Áreas de Atuação' },
     { id: 'sobre', label: 'O Escritório' },
     { id: 'equipe', label: 'Nossa Equipe' },
   ];
 
-  // Navigation links on the RIGHT of the logo (Comunicados positioned immediately to the right of the logo)
+  // Right of centered logo: Áreas de Atuação | Publicações | Contato
   const rightNavLinks = [
-    { id: 'comunicados', label: 'Comunicados' },
-    { id: 'pagina-comunicados', label: 'Página de Comunicados' },
-    { id: 'empresarial', label: 'Empresarial' },
-    { id: 'producao-tecnica', label: 'Produção Técnica' },
+    { id: 'areas', label: 'Áreas de Atuação' },
+    { id: 'publicacoes', label: 'Publicações' },
+    { id: 'contato', label: 'Contato' },
   ];
 
   const allNavLinks = [

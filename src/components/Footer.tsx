@@ -8,9 +8,7 @@ interface FooterProps {
   onNavigate: (sectionId: string) => void;
   onOpenPrivacy: () => void;
   onOpenContact: () => void;
-  onOpenTechnicalPage?: () => void;
-  onOpenCorporatePage?: () => void;
-  onOpenAnnouncementsPage?: () => void;
+  onOpenPublicationsPage?: () => void;
   onOpenAdmin?: () => void;
 }
 
@@ -19,33 +17,28 @@ export const Footer: React.FC<FooterProps> = ({
   onNavigate,
   onOpenPrivacy,
   onOpenContact,
-  onOpenTechnicalPage,
-  onOpenCorporatePage,
-  onOpenAnnouncementsPage,
+  onOpenPublicationsPage,
   onOpenAdmin,
 }) => {
   const whatsappUrl = `https://wa.me/${contactInfo.whatsappNumberDigits}?text=${encodeURIComponent(
     'Olá! Entrei em contato através do site da Advocacia Nicolau.'
   )}`;
 
+  const instagramHref =
+    contactInfo.instagramUrl?.trim() || 'https://www.instagram.com/advocacia.nicolau/';
+
   const navLinks = [
     { id: 'inicio', label: 'Início' },
-    { id: 'areas', label: 'Áreas de Atuação' },
     { id: 'sobre', label: 'O Escritório' },
     { id: 'equipe', label: 'Nossa Equipe' },
-    { id: 'comunicados', label: 'Comunicados' },
-    { id: 'pagina-comunicados', label: 'Portal de Comunicados' },
-    { id: 'empresarial', label: 'Empresarial' },
+    { id: 'areas', label: 'Áreas de Atuação' },
+    { id: 'publicacoes', label: 'Publicações' },
     { id: 'contato', label: 'Contato' },
   ];
 
   const handleLinkClick = (id: string) => {
-    if (id === 'empresarial' && onOpenCorporatePage) {
-      onOpenCorporatePage();
-      return;
-    }
-    if (id === 'pagina-comunicados' && onOpenAnnouncementsPage) {
-      onOpenAnnouncementsPage();
+    if (id === 'publicacoes' && onOpenPublicationsPage) {
+      onNavigate('publicacoes');
       return;
     }
     onNavigate(id);
@@ -76,20 +69,13 @@ export const Footer: React.FC<FooterProps> = ({
                 >
                   {link.label}
                 </button>
-                <span className="text-[#B89554]/40 select-none" aria-hidden="true">
-                  |
-                </span>
+                {idx < navLinks.length - 1 && (
+                  <span className="text-[#B89554]/40 select-none" aria-hidden="true">
+                    |
+                  </span>
+                )}
               </React.Fragment>
             ))}
-
-            {onOpenTechnicalPage && (
-              <button
-                onClick={onOpenTechnicalPage}
-                className="text-[#D6B779] hover:text-[#FAF8F4] transition-colors cursor-pointer py-1 font-medium"
-              >
-                Produção Técnica
-              </button>
-            )}
           </div>
 
           {/* Zone 3: Social & Location Icons */}
@@ -115,12 +101,12 @@ export const Footer: React.FC<FooterProps> = ({
             </a>
 
             <a
-              href="https://instagram.com"
+              href={instagramHref}
               target="_blank"
               rel="noopener noreferrer"
-              title="Instagram Oficial"
+              title="Instagram @advocacia.nicolau"
               className="p-2 hover:text-[#FAF8F4] hover:bg-[#B89554]/20 rounded-full transition-colors cursor-pointer"
-              aria-label="Instagram da Advocacia Nicolau"
+              aria-label="Instagram da Advocacia Nicolau (@advocacia.nicolau)"
             >
               <Instagram className="w-4 h-4" />
             </a>

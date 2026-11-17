@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ContactInfo } from '../data/officeData';
+import { ContactInfo, buildGoogleMapsEmbedUrl, toEmbeddableMapsUrl } from '../data/officeData';
 import {
   MapPin,
   Phone,
@@ -71,7 +71,20 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
 
   const handleSaveContactSettings = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateContactInfo(editableInfo);
+    const updatedToSave: ContactInfo = {
+      ...editableInfo,
+      googleMapsUrl: toEmbeddableMapsUrl(
+        editableInfo.googleMapsUrl,
+        editableInfo.address,
+        editableInfo.city,
+        editableInfo.state,
+        editableInfo.cep
+      ),
+      instagramUrl:
+        editableInfo.instagramUrl?.trim() ||
+        'https://www.instagram.com/advocacia.nicolau/',
+    };
+    onUpdateContactInfo(updatedToSave);
     setIsEditModalOpen(false);
   };
 
@@ -400,14 +413,36 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
             <span className="font-semibold uppercase tracking-wider flex items-center gap-2">
               <MapPin className="w-4 h-4 text-[#D6B779]" /> Localização da Sede da Advocacia Nicolau
             </span>
-            <span className="text-[#FAF8F4]/80 text-[11px] sm:text-xs">
-              {contactInfo.address} — {contactInfo.city}/{contactInfo.state}
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-[#FAF8F4]/80 text-[11px] sm:text-xs">
+                {contactInfo.address} — {contactInfo.city}/{contactInfo.state}
+              </span>
+              <a
+                href={
+                  contactInfo.googleMapsPlaceUrl ||
+                  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    `${contactInfo.address}, ${contactInfo.city} - ${contactInfo.state}, ${contactInfo.cep}`
+                  )}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#B89554]/20 hover:bg-[#B89554]/35 text-[#D6B779] text-[11px] font-medium transition-colors"
+              >
+                <span>Abrir no Google Maps</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           </div>
           <div className="h-64 sm:h-80 md:h-96 w-full rounded-b-3xl overflow-hidden">
             <iframe
               title="Mapa de Localização - Advocacia Nicolau em Guarapuava, PR"
-              src={contactInfo.googleMapsUrl}
+              src={toEmbeddableMapsUrl(
+                contactInfo.googleMapsUrl,
+                contactInfo.address,
+                contactInfo.city,
+                contactInfo.state,
+                contactInfo.cep
+              )}
               width="100%"
               height="100%"
               style={{ border: 0, filter: 'grayscale(0.25) contrast(1.08)' }}
@@ -458,9 +493,14 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                 <input
                   type="text"
                   value={editableInfo.address}
-                  onChange={(e) =>
-                    setEditableInfo({ ...editableInfo, address: e.target.value })
-                  }
+                  onChange={(e) => {
+                    const nextAddr = e.target.value;
+                    setEditableInfo({
+                      ...editableInfo,
+                      address: nextAddr,
+                      googleMapsUrl: buildGoogleMapsEmbedUrl(nextAddr, editableInfo.city, editableInfo.state),
+                    });
+                  }}
                   className="w-full px-3 py-2 border border-[#B89554]/40 text-sm bg-white"
                   required
                 />
@@ -474,9 +514,14 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   <input
                     type="text"
                     value={editableInfo.city}
-                    onChange={(e) =>
-                      setEditableInfo({ ...editableInfo, city: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const nextCity = e.target.value;
+                      setEditableInfo({
+                        ...editableInfo,
+                        city: nextCity,
+                        googleMapsUrl: buildGoogleMapsEmbedUrl(editableInfo.address, nextCity, editableInfo.state),
+                      });
+                    }}
                     className="w-full px-3 py-2 border border-[#B89554]/40 text-sm bg-white"
                     required
                   />
@@ -488,9 +533,14 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   <input
                     type="text"
                     value={editableInfo.state}
-                    onChange={(e) =>
-                      setEditableInfo({ ...editableInfo, state: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const nextState = e.target.value;
+                      setEditableInfo({
+                        ...editableInfo,
+                        state: nextState,
+                        googleMapsUrl: buildGoogleMapsEmbedUrl(editableInfo.address, editableInfo.city, nextState),
+                      });
+                    }}
                     className="w-full px-3 py-2 border border-[#B89554]/40 text-sm bg-white"
                     required
                   />
@@ -553,8 +603,23 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                     setEditableInfo({ ...editableInfo, whatsappNumberDigits: e.target.value.replace(/\D/g, '') })
                   }
                   className="w-full px-3 py-2 border border-[#B89554]/40 text-sm bg-white"
-                  placeholder="5542998761978"
+                  placeholder="5542999771939"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider font-semibold text-[#8C6F36] mb-1">
+                  Link do Instagram
+                </label>
+                <input
+                  type="url"
+                  value={editableInfo.instagramUrl || ''}
+                  onChange={(e) =>
+                    setEditableInfo({ ...editableInfo, instagramUrl: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-[#B89554]/40 text-sm bg-white"
+                  placeholder="https://www.instagram.com/advocacia.nicolau/"
                 />
               </div>
 
@@ -585,6 +650,34 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   }
                   className="w-full px-3 py-2 border border-[#B89554]/40 text-sm bg-white"
                   required
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs uppercase tracking-wider font-semibold text-[#8C6F36]">
+                    URL Incorporada do Google Maps
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditableInfo({
+                        ...editableInfo,
+                        googleMapsUrl: buildGoogleMapsEmbedUrl(editableInfo.address, editableInfo.city, editableInfo.state),
+                      })
+                    }
+                    className="text-[11px] font-semibold text-[#8C6F36] hover:underline cursor-pointer"
+                  >
+                    Gerar do endereço acima
+                  </button>
+                </div>
+                <input
+                  type="url"
+                  value={editableInfo.googleMapsUrl}
+                  onChange={(e) =>
+                    setEditableInfo({ ...editableInfo, googleMapsUrl: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-[#B89554]/40 text-xs bg-white"
                 />
               </div>
 
