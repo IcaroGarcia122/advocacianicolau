@@ -6,6 +6,9 @@ export interface Lawyer {
   image: string;
   summary: string;
   fullBio: string;
+  specialties?: string[];
+  whatsappDisplay?: string;
+  whatsappDigits?: string;
 }
 
 export interface PracticeArea {
@@ -29,6 +32,12 @@ export interface Article {
   content: string[];
 }
 
+export interface EmergencyContact {
+  name: string;
+  display: string;
+  digits: string;
+}
+
 export interface ContactInfo {
   address: string;
   city: string;
@@ -37,6 +46,7 @@ export interface ContactInfo {
   phone: string;
   whatsapp: string;
   whatsappNumberDigits: string;
+  emergencyContacts?: EmergencyContact[];
   instagramUrl?: string;
   email: string;
   workingHours: string;
@@ -50,7 +60,7 @@ export const buildGoogleMapsEmbedUrl = (
   state: string,
   cep?: string
 ): string => {
-  const query = [address, city, state, cep, 'Brasil'].filter(Boolean).join(', ');
+  const query = ['Advocacia Nicolau', address, city, state, cep, 'Brasil'].filter(Boolean).join(', ');
   return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
 };
 
@@ -77,20 +87,36 @@ export const toEmbeddableMapsUrl = (
 };
 
 export const initialContactInfo: ContactInfo = {
-  address: 'Rua Cel. Lustosa, 1022 - Batel',
+  address: 'Rua Cel. Lustosa, 1022 - Centro',
   city: 'Guarapuava',
   state: 'Paraná',
   cep: '85010-060',
-  phone: '(42) 99977-1939',
+  phone: '(42) 3623-1748',
   whatsapp: '(42) 99977-1939',
   whatsappNumberDigits: '5542999771939',
+  emergencyContacts: [
+    {
+      name: 'Miguel Nicolau Junior',
+      display: '(42) 99900-1970',
+      digits: '5542999001970',
+    },
+    {
+      name: 'Felipe Colman Bahls',
+      display: '(42) 99938-2924',
+      digits: '5542999382924',
+    },
+    {
+      name: 'Elizanne Marcondes Soares',
+      display: '(42) 99151-2074',
+      digits: '5542991512074',
+    },
+  ],
   instagramUrl: 'https://www.instagram.com/advocacia.nicolau/',
-  email: 'contato@advocacianicolau.adv.br',
+  email: 'advocacianicolau@gmail.com',
   workingHours: 'Segunda a Sexta-feira: 09h00 às 11h30 e 13h00 às 17h00',
   googleMapsUrl:
-    'https://maps.google.com/maps?q=R.%20Cel.%20Lustosa%2C%201022%20-%20Batel%2C%20Guarapuava%20-%20PR%2C%2085010-060&t=&z=17&ie=UTF8&iwloc=&output=embed',
-  googleMapsPlaceUrl:
-    'https://www.google.com/maps/place/R.+Cel.+Lustosa,+1022+-+Batel,+Guarapuava+-+PR,+85010-060/data=!4m2!3m1!1s0x94ef37ccabdf5333:0x50a634508c94f0e8?sa=X&ved=1t:242&ictx=111',
+    'https://maps.google.com/maps?q=Advocacia%20Nicolau%2C%20Rua%20Cel.%20Lustosa%2C%201022%20-%20Centro%2C%20Guarapuava%20-%20PR%2C%2085010-060%2C%20Brasil&t=&z=17&ie=UTF8&iwloc=&output=embed',
+  googleMapsPlaceUrl: 'https://share.google/YY8BFj1KDYkBx1t9E',
 };
 
 export const lawyers: Lawyer[] = [
@@ -101,7 +127,16 @@ export const lawyers: Lawyer[] = [
     role: 'Sócio Fundador',
     image: '/lawyer_miguel_nicolau.webp',
     summary: 'Atuação consolidada há mais de quatro décadas, liderando estratégias de alta complexidade jurídica com sólida reputação e ética profissional.',
-    fullBio: 'Com inscrição histórica na Ordem dos Advogados do Brasil sob o número OAB/PR 7.708, Dr. Miguel Nicolau Junior é o fundador da banca. Desde 1978, atua ativamente na defesa dos interesses de cidadãos e empresas no Paraná e em tribunais superiores. Sua trajetória de integridade, dedicação aos direitos fundamentais e liderança forense construiu a base sólida sobre a qual a Advocacia Nicolau se firmou como referência no estado.',
+    fullBio:
+      'Com inscrição histórica na Ordem dos Advogados do Brasil sob o número OAB/PR 7.708, Dr. Miguel Nicolau Junior é o fundador da banca.\n\nDesde 1978, atua ativamente na defesa dos interesses de cidadãos e empresas em Guarapuava, em todo o Paraná e nos Tribunais Superiores. Sua trajetória de integridade, dedicação aos direitos fundamentais e liderança forense no Tribunal do Júri e na advocacia contenciosa construiu a base sólida sobre a qual a Advocacia Nicolau se firmou como referência regional.',
+    specialties: [
+      'Tribunal do Júri',
+      'Direito Criminal Especializado',
+      'Estratégia Forense e Tribunais Superiores',
+      'Consultoria Jurídica Patrimonial',
+    ],
+    whatsappDisplay: '(42) 99900-1970',
+    whatsappDigits: '5542999001970',
   },
   {
     id: 'elizanne-soares',
@@ -110,7 +145,16 @@ export const lawyers: Lawyer[] = [
     role: 'Advogada Sócia',
     image: '/lawyer_elizanne_soares.webp',
     summary: 'Atuação técnica e diligente com ênfase na defesa preventiva e contenciosa, prezando pelo acolhimento humanizado e soluções ágeis.',
-    fullBio: 'Dra. Elizanne Marcondes Soares (OAB/PR 108.487) integra a equipe com perfil dinâmico, rigor analítico e sensibilidade no tratamento das demandas. Dedica-se a casos estratégicos de Direito Civil e Família, aliando precisão processual ao constante aperfeiçoamento acadêmico para assegurar a máxima segurança jurídica aos representados pela banca.',
+    fullBio:
+      'Dra. Elizanne Marcondes Soares (OAB/PR 108.487) integra a equipe com perfil dinâmico, rigor analítico e sensibilidade no tratamento das demandas.\n\nDedica-se a casos estratégicos de Direito Civil, Contratos e Direito de Família e Sucessões, aliando precisão processual ao constante aperfeiçoamento técnico para assegurar segurança jurídica e proteção patrimonial aos clientes da banca.',
+    specialties: [
+      'Direito de Família e Sucessões',
+      'Direito Civil e Responsabilidade Civil',
+      'Elaboração e Revisão de Contratos',
+      'Inventários e Partilhas Patrimoniais',
+    ],
+    whatsappDisplay: '(42) 99151-2074',
+    whatsappDigits: '5542991512074',
   },
   {
     id: 'felipe-bahls',
@@ -119,7 +163,16 @@ export const lawyers: Lawyer[] = [
     role: 'Advogado Sócio',
     image: '/lawyer_felipe_bahls.webp',
     summary: 'Advocacia combativa e estratégica, com foco na garantia dos preceitos constitucionais e na defesa vigorosa dos direitos do cliente.',
-    fullBio: 'Dr. Felipe Colman Bahls (OAB/PR 108.488) atua com expressiva presença em audiências, defesas processuais e recursos perante cortes estaduais e federais. Seu trabalho se destaca pela oratória apurada, estudo minucioso de provas e abordagem estratégica personalizada para cada fase da persecução processual.',
+    fullBio:
+      'Dr. Felipe Colman Bahls (OAB/PR 108.488) atua com expressiva presença em audiências, defesas processuais, plantões criminais e recursos perante cortes estaduais e federais.\n\nSeu trabalho se destaca pela oratória apurada, estudo minucioso dos elementos probatórios e abordagem estratégica personalizada para cada fase do inquérito e da ação penal ou cível.',
+    specialties: [
+      'Direito Criminal e Audiências de Custódia',
+      'Habeas Corpus e Recursos Criminais',
+      'Execução Penal',
+      'Contencioso Estratégico',
+    ],
+    whatsappDisplay: '(42) 99938-2924',
+    whatsappDigits: '5542999382924',
   },
 ];
 
@@ -305,7 +358,19 @@ export const getStoredLawyers = (): Lawyer[] => {
     try {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        return parsed.map((item: Lawyer) => {
+          const fallback = lawyers.find((l) => l.id === item.id);
+          return {
+            ...fallback,
+            ...item,
+            specialties:
+              Array.isArray(item.specialties) && item.specialties.length > 0
+                ? item.specialties
+                : fallback?.specialties,
+            whatsappDisplay: item.whatsappDisplay || fallback?.whatsappDisplay,
+            whatsappDigits: item.whatsappDigits || fallback?.whatsappDigits,
+          };
+        });
       }
     } catch (e) {
       return lawyers;

@@ -105,7 +105,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
             <p>
               O titular dos dados pode a qualquer momento solicitar a confirmação de existência de
               tratamento, acesso, correção ou eliminação de seus dados pessoais através do canal:{' '}
-              <span className="font-semibold text-[#17130F]">contato@advocacianicolau.adv.br</span>.
+              <span className="font-semibold text-[#17130F]">advocacianicolau@gmail.com</span>.
             </p>
           </section>
         </div>

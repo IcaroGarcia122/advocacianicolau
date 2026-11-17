@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ContactInfo, buildGoogleMapsEmbedUrl, toEmbeddableMapsUrl } from '../data/officeData';
+import { ContactInfo, buildGoogleMapsEmbedUrl, initialContactInfo, toEmbeddableMapsUrl } from '../data/officeData';
 import {
   MapPin,
   Phone,
@@ -12,6 +12,7 @@ import {
   Settings,
   X,
   ExternalLink,
+  AlertCircle,
 } from 'lucide-react';
 
 interface ContactSectionProps {
@@ -150,12 +151,12 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   </div>
                 </div>
 
-                {/* Telefones */}
+                {/* Telefones & Plantão de Urgência */}
                 <div className="flex items-start gap-4">
                   <div className="p-2.5 bg-[#282019] border border-[#B89554]/40 shrink-0 mt-0.5 rounded-xl">
                     <Phone className="w-4 h-4 text-[#D6B779]" />
                   </div>
-                  <div>
+                  <div className="w-full">
                     <h4
                       className="text-xs uppercase tracking-[0.2em] font-semibold text-[#D6B779] mb-1"
                       style={{ fontFamily: "'Cinzel', serif" }}
@@ -163,11 +164,49 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                       Telefone & WhatsApp
                     </h4>
                     <p className="text-sm text-[#FAF8F4]/85 font-light">
-                      Fixo: <span className="font-normal">{contactInfo.phone}</span>
+                      Telefone Fixo: <span className="font-normal">{contactInfo.phone}</span>
                     </p>
-                    <p className="text-sm text-[#FAF8F4]/85 font-light">
-                      Plantão / WhatsApp: <span className="text-[#D6B779]">{contactInfo.whatsapp}</span>
+                    <p className="text-sm text-[#FAF8F4]/85 font-light mb-3">
+                      WhatsApp do Escritório:{' '}
+                      <a
+                        href={`https://wa.me/${contactInfo.whatsappNumberDigits}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#D6B779] hover:underline font-medium"
+                      >
+                        {contactInfo.whatsapp}
+                      </a>
                     </p>
+
+                    {/* 3 Contatos de Urgência / Plantão */}
+                    <div className="mt-2 p-3.5 rounded-2xl bg-[#282019]/75 border border-[#B89554]/30 space-y-2">
+                      <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-[#D6B779] font-semibold">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        Plantão WhatsApp (Casos de Urgência)
+                      </span>
+                      <div className="space-y-1.5">
+                        {(contactInfo.emergencyContacts || initialContactInfo.emergencyContacts || []).map(
+                          (item) => (
+                            <div
+                              key={item.digits}
+                              className="flex flex-wrap items-center justify-between gap-2 text-xs"
+                            >
+                              <span className="text-[#FAF8F4]/85 font-light">{item.name}</span>
+                              <a
+                                href={`https://wa.me/${item.digits}?text=${encodeURIComponent(
+                                  `Olá, ${item.name}! Preciso de atendimento jurídico de urgência.`
+                                )}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#D6B779] hover:text-[#FAF8F4] font-mono font-medium hover:underline"
+                              >
+                                {item.display}
+                              </a>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -251,7 +290,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   Envie sua Mensagem
                 </h3>
                 <p className="text-xs text-[#FAF8F4]/70 font-light">
-                  Preencha as informações abaixo para que nossa equipe faça um primeiro diagnóstico.
+                  Encaminhe sua mensagem para que nossa equipe possa entrar em contato.
                 </p>
               </div>
 
@@ -663,7 +702,12 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                     onClick={() =>
                       setEditableInfo({
                         ...editableInfo,
-                        googleMapsUrl: buildGoogleMapsEmbedUrl(editableInfo.address, editableInfo.city, editableInfo.state),
+                        googleMapsUrl: buildGoogleMapsEmbedUrl(
+                          editableInfo.address,
+                          editableInfo.city,
+                          editableInfo.state,
+                          editableInfo.cep
+                        ),
                       })
                     }
                     className="text-[11px] font-semibold text-[#8C6F36] hover:underline cursor-pointer"
@@ -678,6 +722,21 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                     setEditableInfo({ ...editableInfo, googleMapsUrl: e.target.value })
                   }
                   className="w-full px-3 py-2 border border-[#B89554]/40 text-xs bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider font-semibold text-[#8C6F36] mb-1">
+                  Link Direto Google Maps (Botão Abrir no Mapa)
+                </label>
+                <input
+                  type="url"
+                  value={editableInfo.googleMapsPlaceUrl || ''}
+                  onChange={(e) =>
+                    setEditableInfo({ ...editableInfo, googleMapsPlaceUrl: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-[#B89554]/40 text-xs bg-white"
+                  placeholder="https://share.google/YY8BFj1KDYkBx1t9E"
                 />
               </div>
 

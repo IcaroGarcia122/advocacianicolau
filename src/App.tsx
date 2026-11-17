@@ -28,6 +28,7 @@ import { Footer } from './components/Footer';
 import { PrivacyModal } from './components/PrivacyModal';
 import { AnnouncementsPage } from './components/AnnouncementsPage';
 import { PublicationDetailPage } from './components/PublicationDetailPage';
+import { LawyerDetailPage } from './components/LawyerDetailPage';
 import { AdminPanel } from './components/AdminPanel';
 import { AnnouncementsSection } from './components/AnnouncementsSection';
 
@@ -35,15 +36,22 @@ type AppView =
   | 'institutional'
   | 'publications'
   | 'publication-detail'
+  | 'lawyer-detail'
   | 'admin';
 
 const parseHashState = (
   hash: string
-): { view: AppView; publicationId: string | null } => {
+): { view: AppView; publicationId: string | null; lawyerId: string | null } => {
+  if (hash.startsWith('#advogado/')) {
+    const id = decodeURIComponent(hash.slice('#advogado/'.length)).trim();
+    if (id) {
+      return { view: 'lawyer-detail', publicationId: null, lawyerId: id };
+    }
+  }
   if (hash.startsWith('#publicacao/')) {
     const id = decodeURIComponent(hash.slice('#publicacao/'.length)).trim();
     if (id) {
-      return { view: 'publication-detail', publicationId: id };
+      return { view: 'publication-detail', publicationId: id, lawyerId: null };
     }
   }
   if (
@@ -52,12 +60,12 @@ const parseHashState = (
     hash === '#pagina-comunicados' ||
     hash === '#producao-tecnica'
   ) {
-    return { view: 'publications', publicationId: null };
+    return { view: 'publications', publicationId: null, lawyerId: null };
   }
   if (hash === '#admin' || hash === '#painel') {
-    return { view: 'admin', publicationId: null };
+    return { view: 'admin', publicationId: null, lawyerId: null };
   }
-  return { view: 'institutional', publicationId: null };
+  return { view: 'institutional', publicationId: null, lawyerId: null };
 };
 
 const loadNormalizedContactInfo = (): ContactInfo => {
@@ -78,8 +86,15 @@ const loadNormalizedContactInfo = (): ContactInfo => {
     if (!parsed.whatsapp || parsed.whatsapp === '(42) 99876-1978') {
       migrated.whatsapp = initialContactInfo.whatsapp;
     }
-    if (!parsed.phone || parsed.phone === '(42) 3623-1978') {
+    if (
+      !parsed.phone ||
+      parsed.phone === '(42) 3623-1978' ||
+      parsed.phone === '(42) 99977-1939'
+    ) {
       migrated.phone = initialContactInfo.phone;
+    }
+    if (!parsed.email || parsed.email === 'contato@advocacianicolau.adv.br') {
+      migrated.email = initialContactInfo.email;
     }
     if (
       !parsed.workingHours ||
@@ -90,7 +105,11 @@ const loadNormalizedContactInfo = (): ContactInfo => {
     if (!parsed.instagramUrl || parsed.instagramUrl === 'https://wa.me/5542999771939') {
       migrated.instagramUrl = initialContactInfo.instagramUrl;
     }
-    if (!parsed.address || parsed.address === 'Rua XV de Novembro, 7840 - Centro') {
+    if (
+      !parsed.address ||
+      parsed.address === 'Rua XV de Novembro, 7840 - Centro' ||
+      parsed.address === 'Rua Cel. Lustosa, 1022 - Batel'
+    ) {
       migrated.address = initialContactInfo.address;
     }
     if (!parsed.cep || parsed.cep === '85010-000') {
@@ -99,12 +118,19 @@ const loadNormalizedContactInfo = (): ContactInfo => {
     if (
       !parsed.googleMapsUrl ||
       parsed.googleMapsUrl.includes('q=Guarapuava,+PR,+Brasil') ||
-      parsed.googleMapsUrl.includes('Rua%20XV%20de%20Novembro')
+      parsed.googleMapsUrl.includes('Rua%20XV%20de%20Novembro') ||
+      parsed.googleMapsUrl.includes('Batel')
     ) {
       migrated.googleMapsUrl = initialContactInfo.googleMapsUrl;
     }
-    if (!parsed.googleMapsPlaceUrl) {
+    if (
+      !parsed.googleMapsPlaceUrl ||
+      parsed.googleMapsPlaceUrl.includes('Batel')
+    ) {
       migrated.googleMapsPlaceUrl = initialContactInfo.googleMapsPlaceUrl;
+    }
+    if (!Array.isArray(parsed.emergencyContacts) || parsed.emergencyContacts.length === 0) {
+      migrated.emergencyContacts = initialContactInfo.emergencyContacts;
     }
 
     return migrated;
@@ -118,6 +144,9 @@ export default function App() {
   const [currentView, setCurrentView] = useState<AppView>(initialRoute.view);
   const [selectedPublicationId, setSelectedPublicationId] = useState<string | null>(
     initialRoute.publicationId
+  );
+  const [selectedLawyerId, setSelectedLawyerId] = useState<string | null>(
+    initialRoute.lawyerId
   );
 
   const [contactInfo, setContactInfo] = useState<ContactInfo>(() =>
@@ -161,6 +190,7 @@ export default function App() {
       const next = parseHashState(window.location.hash);
       setCurrentView(next.view);
       setSelectedPublicationId(next.publicationId);
+      setSelectedLawyerId(next.lawyerId);
       if (next.view !== 'institutional') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -256,13 +286,23 @@ export default function App() {
     window.location.hash = 'publicacoes-portal';
     setCurrentView('publications');
     setSelectedPublicationId(null);
+    setSelectedLawyerId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSelectPublication = (id: string) => {
     window.location.hash = `publicacao/${encodeURIComponent(id)}`;
     setSelectedPublicationId(id);
+    setSelectedLawyerId(null);
     setCurrentView('publication-detail');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSelectLawyer = (lawyerId: string) => {
+    window.location.hash = `advogado/${encodeURIComponent(lawyerId)}`;
+    setSelectedLawyerId(lawyerId);
+    setSelectedPublicationId(null);
+    setCurrentView('lawyer-detail');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -270,6 +310,7 @@ export default function App() {
     window.location.hash = 'admin';
     setCurrentView('admin');
     setSelectedPublicationId(null);
+    setSelectedLawyerId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -277,7 +318,13 @@ export default function App() {
     window.location.hash = '';
     setCurrentView('institutional');
     setSelectedPublicationId(null);
+    setSelectedLawyerId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleScheduleWithLawyer = (lawyerName: string) => {
+    setPreselectedLawyer(lawyerName);
+    scrollToSection('contato');
   };
 
   const handleUpdateContactInfo = (updated: ContactInfo) => {
@@ -326,9 +373,30 @@ export default function App() {
         onUpdateAnnouncements={handleUpdateAnnouncements}
         onOpenAnnouncementsPage={handleOpenPublicationsPage}
         onOpenPublication={handleSelectPublication}
+        onOpenLawyerPage={handleSelectLawyer}
         onExit={handleBackToInstitutional}
       />
     );
+  }
+
+  // View: Individual Lawyer Profile Page (#advogado/<id>)
+  if (currentView === 'lawyer-detail' && selectedLawyerId) {
+    const activeLawyer =
+      lawyersList.find((item) => item.id === selectedLawyerId) || lawyersList[0];
+
+    if (activeLawyer) {
+      return (
+        <LawyerDetailPage
+          lawyer={activeLawyer}
+          allLawyers={lawyersList}
+          contactInfo={contactInfo}
+          onBackToHome={handleBackToInstitutional}
+          onBackToTeam={() => scrollToSection('equipe')}
+          onSelectLawyer={handleSelectLawyer}
+          onScheduleWithLawyer={handleScheduleWithLawyer}
+        />
+      );
+    }
   }
 
   // View: Individual Publication Detail Page (#publicacao/<id>)
@@ -403,6 +471,8 @@ export default function App() {
         <div className="reveal-on-scroll">
           <Team
             contactInfo={contactInfo}
+            lawyersList={lawyersList}
+            onSelectLawyer={handleSelectLawyer}
             onContactClick={() => scrollToSection('contato')}
           />
         </div>

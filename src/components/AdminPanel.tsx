@@ -70,6 +70,7 @@ interface AdminPanelProps {
   onUpdateAnnouncements: (updated: AnnouncementItem[]) => boolean | void;
   onOpenAnnouncementsPage?: () => void;
   onOpenPublication?: (id: string) => void;
+  onOpenLawyerPage?: (id: string) => void;
   onExit: () => void;
 }
 
@@ -319,6 +320,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onUpdateAnnouncements,
   onOpenAnnouncementsPage,
   onOpenPublication,
+  onOpenLawyerPage,
   onExit,
 }) => {
   // Authentication State
@@ -2088,8 +2090,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </p>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-100 mt-4 flex items-center justify-between text-[11px] text-slate-500">
-                      <span>Inscrição ativa na OAB/PR</span>
+                    <div className="pt-4 border-t border-slate-100 mt-4 flex items-center justify-between gap-2 text-[11px] text-slate-500">
+                      {onOpenLawyerPage ? (
+                        <button
+                          type="button"
+                          onClick={() => onOpenLawyerPage(lawyer.id)}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#8C6F36] hover:underline cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Ver página</span>
+                        </button>
+                      ) : (
+                        <span>Inscrição ativa na OAB/PR</span>
+                      )}
                       <button
                         type="button"
                         onClick={() => setEditingLawyer(lawyer)}
@@ -2325,7 +2338,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       onClick={() =>
                         setContactForm({
                           ...contactForm,
-                          googleMapsUrl: buildGoogleMapsEmbedUrl(contactForm.address, contactForm.city, contactForm.state),
+                          googleMapsUrl: buildGoogleMapsEmbedUrl(
+                            contactForm.address,
+                            contactForm.city,
+                            contactForm.state,
+                            contactForm.cep
+                          ),
                         })
                       }
                       className="text-[11px] font-semibold text-[#8C6F36] hover:underline cursor-pointer"
@@ -2337,6 +2355,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     type="url"
                     value={contactForm.googleMapsUrl}
                     onChange={(e) => setContactForm({ ...contactForm, googleMapsUrl: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#8C6F36]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
+                    Link Direto Google Maps (Botão Abrir no Mapa)
+                  </label>
+                  <input
+                    type="url"
+                    value={contactForm.googleMapsPlaceUrl || ''}
+                    onChange={(e) =>
+                      setContactForm({ ...contactForm, googleMapsPlaceUrl: e.target.value })
+                    }
+                    placeholder="https://share.google/YY8BFj1KDYkBx1t9E"
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                   />
                 </div>
@@ -3007,11 +3040,69 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   Resumo Institucional
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={editingLawyer.summary}
                   onChange={(e) => setEditingLawyer({ ...editingLawyer, summary: e.target.value })}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
+                  Biografia Completa (Página Individual)
+                </label>
+                <textarea
+                  rows={5}
+                  value={editingLawyer.fullBio}
+                  onChange={(e) => setEditingLawyer({ ...editingLawyer, fullBio: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
+                    WhatsApp Plantão (Exibição)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingLawyer.whatsappDisplay || ''}
+                    onChange={(e) =>
+                      setEditingLawyer({
+                        ...editingLawyer,
+                        whatsappDisplay: e.target.value,
+                        whatsappDigits: e.target.value.replace(/\D/g, '')
+                          ? e.target.value.replace(/\D/g, '').startsWith('55')
+                            ? e.target.value.replace(/\D/g, '')
+                            : `55${e.target.value.replace(/\D/g, '')}`
+                          : editingLawyer.whatsappDigits,
+                      })
+                    }
+                    placeholder="(42) 99900-1970"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-slate-700 font-semibold mb-1">
+                    Especialidades (separadas por vírgula)
+                  </label>
+                  <input
+                    type="text"
+                    value={(editingLawyer.specialties || []).join(', ')}
+                    onChange={(e) =>
+                      setEditingLawyer({
+                        ...editingLawyer,
+                        specialties: e.target.value
+                          .split(',')
+                          .map((s) => s.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                    placeholder="Tribunal do Júri, Direito Criminal"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#8C6F36]"
+                  />
+                </div>
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">

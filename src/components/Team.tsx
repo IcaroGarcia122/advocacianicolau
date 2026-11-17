@@ -1,16 +1,19 @@
 import React from 'react';
-import { ArrowRight, MessageSquare } from 'lucide-react';
-import { ContactInfo, initialContactInfo } from '../data/officeData';
+import { ArrowRight, MessageSquare, UserCheck } from 'lucide-react';
+import { ContactInfo, Lawyer, initialContactInfo, lawyers as defaultLawyers } from '../data/officeData';
 
 interface TeamProps {
   contactInfo?: ContactInfo;
+  lawyersList?: Lawyer[];
+  onSelectLawyer?: (lawyerId: string) => void;
   onScheduleWithLawyer?: (lawyerName: string) => void;
   onContactClick?: () => void;
 }
 
 export const Team: React.FC<TeamProps> = ({
   contactInfo = initialContactInfo,
-  onContactClick,
+  lawyersList = defaultLawyers,
+  onSelectLawyer,
 }) => {
   const whatsappUrl = `https://wa.me/${contactInfo.whatsappNumberDigits}?text=${encodeURIComponent(
     'Olá! Gostaria de falar com os advogados da Advocacia Nicolau.'
@@ -19,6 +22,14 @@ export const Team: React.FC<TeamProps> = ({
   const scheduleWhatsappUrl = `https://wa.me/${contactInfo.whatsappNumberDigits}?text=${encodeURIComponent(
     'Olá! Gostaria de agendar um atendimento jurídico com a Advocacia Nicolau.'
   )}`;
+
+  const handleOpenProfile = (lawyerId: string) => {
+    if (onSelectLawyer) {
+      onSelectLawyer(lawyerId);
+    } else {
+      window.location.hash = `advogado/${encodeURIComponent(lawyerId)}`;
+    }
+  };
 
   return (
     <section id="equipe" className="relative py-24 lg:py-32 bg-[#FFFFFF] text-[#17130F] overflow-hidden min-h-[620px] flex items-center">
@@ -71,27 +82,58 @@ export const Team: React.FC<TeamProps> = ({
               Contamos com uma equipe de advogados qualificados, prontos para oferecer um atendimento personalizado e soluções jurídicas eficazes nas esferas criminal, cível e familiar.
             </p>
 
-            {/* Lawyers OAB Credentials Strip */}
-            <div className="pt-5 border-t border-[#8C6F36]/25 mb-8 max-w-lg">
+            {/* Lawyers Highlighted Cards with Individual Profile Buttons */}
+            <div className="pt-5 border-t border-[#8C6F36]/25 mb-8 max-w-xl">
               <span
                 className="text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-[#8C6F36] font-semibold block mb-3.5"
                 style={{ fontFamily: "'Cinzel', serif" }}
               >
-                Advogados Integrantes
+                Advogados Integrantes · Conheça cada Perfil
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <div className="p-3 rounded-xl bg-[#F8F6F1] border border-[#8C6F36]/30 shadow-sm">
-                  <h4 className="text-xs sm:text-sm font-semibold text-[#17130F] leading-tight">Miguel Nicolau Junior</h4>
-                  <span className="text-[11px] text-[#8C6F36] font-mono mt-1 block font-medium">OAB/PR 7.708</span>
-                </div>
-                <div className="p-3 rounded-xl bg-[#F8F6F1] border border-[#8C6F36]/30 shadow-sm">
-                  <h4 className="text-xs sm:text-sm font-semibold text-[#17130F] leading-tight">Elizanne Marcondes Soares</h4>
-                  <span className="text-[11px] text-[#8C6F36] font-mono mt-1 block font-medium">OAB/PR 108.487</span>
-                </div>
-                <div className="p-3 rounded-xl bg-[#F8F6F1] border border-[#8C6F36]/30 shadow-sm">
-                  <h4 className="text-xs sm:text-sm font-semibold text-[#17130F] leading-tight">Felipe Colman Bahls</h4>
-                  <span className="text-[11px] text-[#8C6F36] font-mono mt-1 block font-medium">OAB/PR 108.488</span>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {lawyersList.map((lawyer) => (
+                  <div
+                    key={lawyer.id}
+                    className="group p-3.5 rounded-2xl bg-[#FAF8F4] border border-[#B89554]/40 hover:border-[#8C6F36] shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2.5 mb-2.5">
+                        <img
+                          src={lawyer.image}
+                          alt={lawyer.name}
+                          className="w-11 h-11 rounded-full object-cover object-top border border-[#B89554]/60 shrink-0"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <div className="min-w-0">
+                          <span className="text-[10px] uppercase tracking-wider text-[#8C6F36] font-semibold block truncate">
+                            {lawyer.role}
+                          </span>
+                          <span className="text-[11px] text-[#5C4A26] font-mono block font-semibold">
+                            {lawyer.oab}
+                          </span>
+                        </div>
+                      </div>
+
+                      <h4
+                        className="text-base sm:text-[1.05rem] font-bold text-[#17130F] group-hover:text-[#8C6F36] transition-colors leading-snug"
+                        style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                      >
+                        {lawyer.name}
+                      </h4>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenProfile(lawyer.id)}
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-[#17130F] hover:bg-[#8C6F36] text-[#FAF8F4] text-[11px] font-semibold tracking-wide transition-colors cursor-pointer"
+                    >
+                      <UserCheck className="w-3.5 h-3.5 text-[#D6B779] shrink-0" />
+                      <span>Ver Biografia</span>
+                      <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
 
