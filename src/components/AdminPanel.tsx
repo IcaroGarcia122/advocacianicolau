@@ -54,6 +54,7 @@ import {
   getStoredClientLeads,
   saveStoredClientLeads,
   buildGoogleMapsEmbedUrl,
+  editorialVisualAssets,
 } from '../data/officeData';
 import { Logo } from './Logo';
 
@@ -174,11 +175,12 @@ const ImageAttachmentPicker: React.FC<ImageAttachmentPickerProps> = ({
   };
 
   const officePresets = [
-    { label: 'Júri', path: '/team_juri.webp' },
-    { label: 'Congresso', path: '/team_congresso.webp' },
-    { label: 'Balança', path: '/balanca_livros.webp' },
-    { label: 'Fachada', path: '/office_facade_nicolau.webp' },
-    { label: 'Têmis', path: '/hero_justice_bg.webp' },
+    { label: 'Fachada Sede', path: editorialVisualAssets.facade },
+    { label: 'Fachada Vista Externa', path: editorialVisualAssets.facadeAngle },
+    { label: 'Recepção', path: editorialVisualAssets.reception },
+    { label: 'Criminal / Plenário', path: editorialVisualAssets.criminal },
+    { label: 'Cível / Contratos', path: editorialVisualAssets.civil },
+    { label: 'Família / Sala', path: editorialVisualAssets.family },
     { label: 'Dr. Miguel', path: '/lawyer_miguel_nicolau.webp' },
     { label: 'Dra. Elizanne', path: '/lawyer_elizanne_soares.webp' },
     { label: 'Dr. Felipe', path: '/lawyer_felipe_bahls.webp' },
@@ -206,7 +208,7 @@ const ImageAttachmentPicker: React.FC<ImageAttachmentPickerProps> = ({
               alt="Preview"
               className="w-full h-full object-cover"
               onError={(e) => {
-                e.currentTarget.src = '/team_juri.webp';
+                e.currentTarget.src = editorialVisualAssets.reception;
               }}
             />
           ) : (
@@ -256,7 +258,7 @@ const ImageAttachmentPicker: React.FC<ImageAttachmentPickerProps> = ({
                 <span className="font-medium truncate">Imagem anexada do dispositivo (pronta para publicação)</span>
                 <button
                   type="button"
-                  onClick={() => onChange('/team_juri.webp')}
+                  onClick={() => onChange(editorialVisualAssets.reception)}
                   className="text-[11px] font-semibold underline shrink-0 cursor-pointer hover:text-emerald-950"
                 >
                   Usar link/padrão
@@ -427,7 +429,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     author: 'Advocacia Nicolau',
     readTime: '4 min de leitura',
     date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
-    image: '/team_juri.webp',
+    image: editorialVisualAssets.reception,
     contentRaw: '',
   });
 
@@ -451,7 +453,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       author: 'Advocacia Nicolau',
       readTime: '4 min de leitura',
       date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
-      image: '/team_juri.webp',
+      image: editorialVisualAssets.reception,
       contentRaw: '',
     });
     setIsArticleModalOpen(true);
@@ -489,7 +491,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       author: articleForm.author.trim() || 'Advocacia Nicolau',
       readTime: articleForm.readTime.trim() || '4 min de leitura',
       date: articleForm.date,
-      image: articleForm.image.trim() || '/team_juri.webp',
+      image: articleForm.image.trim() || editorialVisualAssets.reception,
       content: contentParagraphs.length > 0 ? contentParagraphs : [articleForm.description],
     };
 
@@ -564,7 +566,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
       author: 'Advocacia Nicolau',
       readTime: '3 min de leitura',
-      image: '/team_juri.webp',
+      image: editorialVisualAssets.reception,
       excerpt: '',
       content: [''],
       featured: featuredByDefault,
@@ -582,7 +584,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       date: item.date.trim() || new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
       author: (item.author || '').trim() || 'Advocacia Nicolau',
       readTime: (item.readTime || '').trim() || '3 min de leitura',
-      image: item.image.trim() || '/team_juri.webp',
+      image: item.image.trim() || editorialVisualAssets.reception,
       excerpt: item.excerpt.trim(),
       content: cleanedContent.length > 0 ? cleanedContent : [item.excerpt.trim() || item.title.trim()],
       featured: item.featured ?? true,
@@ -707,7 +709,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       tag: article.category,
       title: article.title,
       date: article.date,
-      image: article.image || '/team_juri.webp',
+      image: article.image || editorialVisualAssets.reception,
       excerpt: article.description,
       content: article.content,
       featured: true,
@@ -743,7 +745,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         tag: article.category,
         title: article.title,
         date: article.date,
-        image: article.image || '/team_juri.webp',
+        image: article.image || editorialVisualAssets.reception,
         excerpt: article.description,
         content: article.content,
         featured: true,
@@ -1477,7 +1479,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               alt={item.title}
                               className="w-full h-full object-cover"
                               onError={(e) => {
-                                e.currentTarget.src = '/team_juri.webp';
+                                e.currentTarget.src = editorialVisualAssets.reception;
                               }}
                             />
                             <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#967444] text-white text-[10px] font-bold">
@@ -1665,7 +1667,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               alt={item.title}
                               className="w-14 h-12 rounded-lg object-cover shrink-0 border border-slate-200"
                               onError={(e) => {
-                                e.currentTarget.src = '/team_juri.webp';
+                                e.currentTarget.src = editorialVisualAssets.reception;
                               }}
                             />
                             <div className="min-w-0">
@@ -1807,7 +1809,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               alt={item.title}
                               className="w-full h-full object-cover"
                               onError={(e) => {
-                                e.currentTarget.src = '/team_juri.webp';
+                                e.currentTarget.src = editorialVisualAssets.reception;
                               }}
                             />
                             <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#967444] text-white text-[10px] font-bold">
@@ -2067,7 +2069,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             alt={lawyer.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              e.currentTarget.src = '/team_juri.webp';
+                              e.currentTarget.src = editorialVisualAssets.reception;
                             }}
                           />
                         </div>
@@ -2677,7 +2679,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               alt={candidate.title}
                               className="w-16 h-14 rounded-xl object-cover shrink-0 border border-slate-200"
                               onError={(e) => {
-                                e.currentTarget.src = '/team_juri.webp';
+                                e.currentTarget.src = editorialVisualAssets.reception;
                               }}
                             />
                             <div className="min-w-0">
@@ -2743,7 +2745,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             alt={art.title}
                             className="w-16 h-14 rounded-xl object-cover shrink-0 border border-slate-200"
                             onError={(e) => {
-                              e.currentTarget.src = '/team_juri.webp';
+                              e.currentTarget.src = editorialVisualAssets.reception;
                             }}
                           />
                           <div className="min-w-0">
@@ -2896,7 +2898,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               {/* Image Attachment Picker */}
               <ImageAttachmentPicker
                 label="Imagem de Capa da Publicação *"
-                value={editingAnnouncement.image || '/team_juri.webp'}
+                value={editingAnnouncement.image || editorialVisualAssets.reception}
                 onChange={(img) => setEditingAnnouncement({ ...editingAnnouncement, image: img })}
                 helperText="Anexe uma foto do seu dispositivo ou escolha das imagens do escritório."
               />

@@ -9,7 +9,7 @@ import {
   Clock,
   BookOpen,
 } from 'lucide-react';
-import { getStoredAnnouncements, AnnouncementItem, ContactInfo } from '../data/officeData';
+import { getStoredAnnouncements, AnnouncementItem, ContactInfo, editorialVisualAssets } from '../data/officeData';
 import { Logo } from './Logo';
 
 interface AnnouncementsPageProps {
@@ -146,9 +146,9 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
 
       {/* Hero Banner (Fundo Branco conforme preferência visual) */}
       <section className="relative py-16 sm:py-24 bg-white text-[#17130F] border-b border-[#8C6F36]/20 overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-multiply">
+        <div className="absolute inset-0 opacity-[0.06] pointer-events-none mix-blend-multiply">
           <img
-            src="/office_facade_nicolau.webp"
+            src={editorialVisualAssets.facade}
             alt=""
             className="w-full h-full object-cover filter contrast-125"
             loading="lazy"
@@ -291,8 +291,7 @@ export const AnnouncementsPage: React.FC<AnnouncementsPageProps> = ({
                     loading="lazy"
                     decoding="async"
                     onError={(e) => {
-                      const target = e.currentTarget;
-                      target.src = '/team_juri.webp';
+                      e.currentTarget.src = editorialVisualAssets.reception;
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#231B15] via-black/40 to-transparent" />

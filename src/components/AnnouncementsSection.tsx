@@ -4,7 +4,7 @@ import {
   getStoredAnnouncements,
   AnnouncementItem,
   ContactInfo,
-  initialContactInfo,
+  editorialVisualAssets,
 } from '../data/officeData';
 
 interface AnnouncementsSectionProps {
@@ -58,70 +58,72 @@ export const AnnouncementsSection: React.FC<AnnouncementsSectionProps> = ({
               style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
               Artigos, notícias e<br />
-              <span className="text-[#8C6F36] italic font-normal">comunicados oficiais.</span>
+              <span className="text-[#8C6F36] italic font-normal">informações jurídicas.</span>
             </h2>
           </div>
 
           <p className="text-xs sm:text-sm text-[#4A3E36] font-normal max-w-md leading-relaxed">
-            Conteúdos jurídicos, artigos técnicos, notícias e comunicados institucionais reunidos com rigor técnico pela equipe da Advocacia Nicolau.
+            Espaço dedicado à futura publicação de artigos técnicos, análises jurídicas, notícias e comunicados oficiais aprovados pela Advocacia Nicolau.
           </p>
         </div>
 
-        {/* Publications Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Clean Editorial Publications Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
           {publications.map((item) => (
             <article
               key={item.id}
               onClick={() => handleCardClick(item)}
-              className="group relative h-80 sm:h-96 rounded-2xl overflow-hidden border border-[#8C6F36]/25 shadow-md cursor-pointer hover:border-[#8C6F36] hover:shadow-2xl hover:shadow-[#8C6F36]/20 transition-all duration-300 flex flex-col justify-end bg-[#17130F] animate-fadeIn"
+              className="group rounded-2xl overflow-hidden border border-[#B89554]/30 bg-[#FAF8F4] hover:border-[#8C6F36] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer animate-fadeIn"
             >
-              {/* Cover Photo */}
-              <img
-                src={item.image}
-                alt={item.title}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
-                loading="lazy"
-                decoding="async"
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  target.src = '/team_juri.webp';
-                }}
-              />
-
-              {/* Gradient Scrim */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none" />
-
-              {/* Card Content Overlay */}
-              <div className="relative z-10 p-6 sm:p-7 flex flex-col justify-end">
-                {/* Publication Type & Tag Badges */}
-                <div className="mb-3 flex flex-wrap items-center gap-1.5">
-                  {item.publicationType && (
-                    <span className="inline-block px-2.5 py-0.5 bg-[#17130F]/85 border border-[#B89554]/50 text-[#D6B779] text-[10px] font-semibold tracking-wider uppercase rounded-full shadow-md">
-                      {item.publicationType}
-                    </span>
-                  )}
-                  <span className="inline-block px-3 py-0.5 bg-[#8C6F36] text-[#FAF8F4] text-[11px] font-semibold tracking-wide rounded-full shadow-md">
-                    {item.tag}
-                  </span>
+              <div>
+                {/* Editorial Cover Photography */}
+                <div className="relative h-56 overflow-hidden bg-[#17130F]">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    loading="lazy"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.currentTarget.src = editorialVisualAssets.reception;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
                 </div>
 
-                {/* Bold Headline */}
-                <h3 className="text-base sm:text-lg font-bold text-white leading-snug group-hover:text-[#D6B779] transition-colors line-clamp-3">
-                  {item.title}
-                </h3>
+                {/* Clean Unboxed Editorial Metadata + Title */}
+                <div className="p-6 pb-4">
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-[#8C6F36] font-semibold mb-2.5">
+                    <span>{item.publicationType || 'Artigo Jurídico'}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{item.tag}</span>
+                  </div>
 
-                {/* Date and Read Link */}
-                <div className="mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-xs text-[#FAF8F4]/80">
-                  <span className="flex items-center gap-1.5 font-light">
-                    <Calendar className="w-3.5 h-3.5 text-[#D6B779]" />
-                    {item.date}
-                  </span>
+                  <h3
+                    className="text-lg sm:text-xl font-normal text-[#17130F] leading-snug group-hover:text-[#8C6F36] transition-colors line-clamp-3 mb-3"
+                    style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                  >
+                    {item.title}
+                  </h3>
 
-                  <span className="text-[#D6B779] font-medium inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                    <span>Ler publicação</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </span>
+                  <p className="text-xs sm:text-sm text-[#4A3E36] font-light leading-relaxed line-clamp-3">
+                    {item.excerpt}
+                  </p>
                 </div>
+              </div>
+
+              {/* Date and Read Link */}
+              <div className="px-6 pb-6 pt-3 border-t border-[#B89554]/20 mx-6 flex items-center justify-between text-xs text-[#5C4A26]">
+                <span className="flex items-center gap-1.5 font-normal">
+                  <Calendar className="w-3.5 h-3.5 text-[#8C6F36]" />
+                  {item.date}
+                </span>
+
+                <span className="text-[#8C6F36] font-semibold inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  <span>Ler</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </span>
               </div>
             </article>
           ))}

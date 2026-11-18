@@ -1,3 +1,20 @@
+import pubCriminalImg from '../assets/images/pub_editorial_criminal_law_1795023553159.jpg';
+import pubCivilImg from '../assets/images/pub_editorial_contracts_civil_1795023554834.jpg';
+import pubFamilyImg from '../assets/images/pub_editorial_family_planning_1795023553728.jpg';
+import pubReceptionImg from '../assets/images/pub_editorial_reception_office_1795023555594.jpg';
+import officeFacadeFrontImg from '../assets/images/Fachada da Advocacia Nicolau em Destaque (1).webp';
+import officeFacadeAngleImg from '../assets/images/Imagem do ChatGPT 18 de nov. de 2026, 15_08_42.png';
+
+export const editorialVisualAssets = {
+  criminal: pubCriminalImg,
+  civil: pubCivilImg,
+  family: pubFamilyImg,
+  reception: pubReceptionImg,
+  facade: officeFacadeFrontImg,
+  facadeAngle: officeFacadeAngleImg,
+  team: '/team_juri.webp',
+};
+
 export interface Lawyer {
   id: string;
   name: string;
@@ -248,7 +265,7 @@ export const articles: Article[] = [
     date: '15 de Outubro de 2026',
     author: 'Advocacia Nicolau',
     readTime: '4 min de leitura',
-    image: '/hero_justice_themis.webp',
+    image: pubCriminalImg,
     content: [
       'A audiência de custódia representa um dos maiores avanços do ordenamento processual penal brasileiro, consagrada por pactos internacionais de direitos humanos ratificados pelo país e positivada pela Lei 13.964/2019.',
       'O ato impõe que toda pessoa presa em flagrante seja apresentada à autoridade judicial no prazo máximo de 24 horas, assegurando o controle de legalidade da prisão e a verificação de eventuais abusos ou integridade física do custodiado.',
@@ -264,7 +281,7 @@ export const articles: Article[] = [
     date: '28 de Setembro de 2026',
     author: 'Advocacia Nicolau',
     readTime: '5 min de leitura',
-    image: '/legal_desk_calltoaction.webp',
+    image: pubCivilImg,
     content: [
       'A celebração de contratos que envolvem transmissão de propriedade ou posse de bens imóveis exige rigor técnico absoluto. Cláusulas genéricas ou minutas desprovidas de estudo prévio abrem espaço para litígios onerosos.',
       'A análise de certidões cíveis, criminais, trabalhistas e fiscais em nome dos transmitentes (due diligence imobiliária) é imprescindível para atestar a boa-fé do adquirente e repelir riscos de fraude contra credores ou execução.',
@@ -280,7 +297,7 @@ export const articles: Article[] = [
     date: '10 de Setembro de 2026',
     author: 'Advocacia Nicolau',
     readTime: '6 min de leitura',
-    image: '/office_facade_nicolau.webp',
+    image: pubFamilyImg,
     content: [
       'A sucessão hereditária é um dos momentos mais sensíveis na trajetória de qualquer núcleo familiar e empresarial. Quando não planejada, pode desencadear conflitos duradouros e a dilapidação do patrimônio acumulado ao longo de gerações.',
       'O planejamento sucessório viabiliza instrumentos eficazes como testamentos públicos, doações com reserva de usufruto, cláusulas de incomunicabilidade e inalienabilidade, bem como a constituição de holdings patrimoniais.',
@@ -299,12 +316,13 @@ export interface HeroSettings {
 }
 
 export const initialHeroSettings: HeroSettings = {
-  kicker: 'ADVOCACIA NICOLAU',
-  sloganPart1: 'Tradição, experiência',
-  sloganPart2: 'e compromisso com',
-  sloganHighlight: 'a sua jornada.',
-  subtitle: 'Desde 1978, construindo uma história de credibilidade e dedicação na defesa dos seus direitos.',
-  buttonText: 'Conheça nosso escritório',
+  kicker: 'ADVOCACIA TRADICIONAL DESDE 1978',
+  sloganPart1: 'Tradição, experiência e',
+  sloganPart2: 'compromisso com',
+  sloganHighlight: 'a sua causa.',
+  subtitle:
+    'Atuação nas áreas Criminal, Cível e de Família, pautada pela ética, seriedade e dedicação à defesa dos direitos e interesses de nossos clientes.',
+  buttonText: 'Entre em contato',
 };
 
 export const getStoredHeroSettings = (): HeroSettings => {
@@ -403,7 +421,7 @@ export const initialHighlights: HighlightItem[] = [
     title: 'Planejamento Societário e Proteção Patrimonial de Grupos Empresariais no Paraná',
     subtitle: 'Estruturação de holdings familiares e blindagem patrimonial preventiva.',
     date: '10 de Novembro de 2026',
-    image: '/office_facade_nicolau.webp',
+    image: officeFacadeFrontImg,
     content: [
       'A expansão de empresas familiares e grupos corporativos no centro-sul paranaense demanda governança societária sólida e instrumentos de proteção patrimonial.',
       'A criação de holdings patrimoniais aliada a acordos de sócios detalhados minimiza riscos tributários e conflitos sucessórios, assegurando a perenidade dos negócios.',
@@ -446,7 +464,7 @@ export const initialHighlights: HighlightItem[] = [
     title: 'Nota Oficial: Posicionamento Institucional e Atuação em Defesas de Repercussão Regional',
     subtitle: 'Compromisso intransigente com as garantias constitucionais e o sigilo profissional.',
     date: '08 de Novembro de 2026',
-    image: '/team_juri.webp',
+    image: pubCriminalImg,
     content: [
       'A Advocacia Nicolau reafirma seu compromisso histórico de mais de quatro décadas na defesa combativa e ética das prerrogativas da advocacia e das garantias individuais.',
       'Nos processos de ampla repercussão midiática, a atuação do escritório permanece estritamente pautada na técnica forense, na ampla defesa e no respeito à legalidade processual penal.',
@@ -460,7 +478,7 @@ export const initialHighlights: HighlightItem[] = [
     title: 'Atendimento Presencial em Guarapuava e Plataforma Digital Integrada',
     subtitle: 'Conectividade segura com clientes em todo o território nacional.',
     date: '02 de Novembro de 2026',
-    image: '/hero_justice_themis.webp',
+    image: pubReceptionImg,
     content: [
       'Comunicamos aos nossos clientes e parceiros que, além do tradicional atendimento em nossa sede própria em Guarapuava/PR, disponibilizamos canal digital criptografado para reuniões virtuais e acompanhamento processual.',
       'Dessa forma, clientes em qualquer comarca ou estado contam com a mesma agilidade e atenção exclusiva que consolidaram nossa história.'
@@ -473,7 +491,7 @@ export const initialHighlights: HighlightItem[] = [
     title: 'Informativo Jurídico: Atualização sobre Prazos Processuais e Sessões nos Tribunais',
     subtitle: 'Orientações sobre o calendário forense e sessões extraordinárias.',
     date: '25 de Outubro de 2026',
-    image: '/office_facade_nicolau.webp',
+    image: pubCivilImg,
     content: [
       'Informamos que os prazos processuais e o plantão judiciário nos Tribunais de Justiça e Superiores estão devidamente monitorados por nossa controladoria jurídica.',
       'Audiências de custódia, pedidos de liberdade e medidas urgentes permanecem com atendimento ininterrupto em regime de sobreaviso.'
@@ -520,70 +538,21 @@ export type PublicationItem = AnnouncementItem;
 
 export const initialAnnouncements: AnnouncementItem[] = [
   {
-    id: 'com-1',
-    publicationType: 'Comunicado Institucional',
-    tag: 'Nota Oficial',
-    title: 'Posicionamento Institucional e Atuação em Defesas de Repercussão Regional',
-    date: '08 de Novembro de 2026',
-    author: 'Advocacia Nicolau',
-    readTime: '3 min de leitura',
-    image: '/team_juri.webp',
-    excerpt: 'Reafirmação do compromisso histórico da Advocacia Nicolau com as garantias constitucionais e o sigilo processual.',
-    featured: true,
-    content: [
-      'A Advocacia Nicolau reafirma seu compromisso histórico de mais de quatro décadas na defesa combativa e ética das prerrogativas da advocacia e das garantias individuais asseguradas pela Constituição Federal.',
-      'Nos processos de ampla repercussão pública e perante o Tribunal do Júri, a atuação do escritório permanece estritamente pautada na técnica forense, na ampla defesa e no respeito à legalidade processual penal.',
-      'Informações relativas a processos sob sigilo de justiça são resguardadas com absoluto rigor ético e deontológico em respeito aos nossos clientes e ao Poder Judiciário.'
-    ],
-  },
-  {
-    id: 'com-2',
-    publicationType: 'Notícia',
-    tag: 'Atendimento & Estrutura',
-    title: 'Atendimento Presencial em Guarapuava e Plataforma Digital Integrada',
-    date: '02 de Novembro de 2026',
-    author: 'Advocacia Nicolau',
-    readTime: '2 min de leitura',
-    image: '/hero_justice_themis.webp',
-    excerpt: 'Disponibilização de canal digital criptografado para reuniões virtuais com clientes em todo o território nacional.',
-    featured: true,
-    content: [
-      'Comunicamos aos nossos clientes e parceiros que, além do tradicional atendimento em nossa sede em Guarapuava/PR, disponibilizamos canal digital criptografado para reuniões virtuais e acompanhamento processual.',
-      'Dessa forma, clientes em qualquer comarca ou estado contam com a mesma agilidade e atenção exclusiva que consolidaram nossa história.'
-    ],
-  },
-  {
     id: 'garantias-criminais',
     publicationType: 'Artigo Jurídico',
     tag: 'Direito Criminal',
     title: 'Audiência de Custódia e a Preservação das Garantias Constitucionais',
-    date: '15 de Outubro de 2026',
+    date: 'Modelo Ilustrativo · Para Aprovação',
     author: 'Advocacia Nicolau',
     readTime: '4 min de leitura',
-    image: '/hero_justice_themis.webp',
-    excerpt: 'Compreenda o papel essencial da defesa técnica nas primeiras 24 horas após a prisão e a avaliação da legalidade do ato.',
+    image: pubCriminalImg,
+    excerpt:
+      'Conteúdo demonstrativo para apresentação visual da área Criminal: o papel técnico da defesa nas primeiras 24 horas após a prisão.',
     featured: true,
     content: [
-      'A audiência de custódia representa um dos maiores avanços do ordenamento processual penal brasileiro, consagrada por pactos internacionais de direitos humanos ratificados pelo país e positivada pela Lei 13.964/2019.',
-      'O ato impõe que toda pessoa presa em flagrante seja apresentada à autoridade judicial no prazo máximo de 24 horas, assegurando o controle de legalidade da prisão e a verificação de eventuais abusos ou integridade física do custodiado.',
-      'A presença de um advogado criminalista nesse primeiro contato é determinante para pleitear o relaxamento de prisões ilegais, a concessão de liberdade provisória com ou sem fiança e a aplicação de medidas cautelares diversas do encarceramento.',
-      'Em nossa atuação de mais de quatro décadas em Guarapuava e região, testemunhamos cotidianamente que a celeridade e o conhecimento técnico das nulidades processuais resguardam o bem mais precioso: a liberdade sob o devido processo legal.',
-    ],
-  },
-  {
-    id: 'com-3',
-    publicationType: 'Comunicado Institucional',
-    tag: 'Plantão Forense',
-    title: 'Informativo Jurídico: Atualização sobre Prazos Processuais e Sessões nos Tribunais',
-    date: '25 de Outubro de 2026',
-    author: 'Advocacia Nicolau',
-    readTime: '2 min de leitura',
-    image: '/office_facade_nicolau.webp',
-    excerpt: 'Orientações sobre o calendário forense, sessões dos Tribunais Superiores e regime de sobreaviso criminal.',
-    featured: true,
-    content: [
-      'Informamos que os prazos processuais e o plantão judiciário nos Tribunais de Justiça e Superiores estão devidamente monitorados por nossa controladoria jurídica.',
-      'Audiências de custódia, pedidos de liberdade e medidas urgentes permanecem com atendimento ininterrupto em regime de sobreaviso.'
+      'A audiência de custódia representa um dos maiores avanços do ordenamento processual penal brasileiro, consagrada por tratados internacionais e positivada na legislação pátria.',
+      'O ato assegura que toda pessoa presa em flagrante seja apresentada à autoridade judicial no prazo de 24 horas, permitindo o controle de legalidade da prisão e a verificação de medidas cautelares.',
+      'Este texto é um modelo demonstrativo reservado à futura substituição por artigo técnico redigido e aprovado pelo corpo jurídico da Advocacia Nicolau.',
     ],
   },
   {
@@ -591,90 +560,75 @@ export const initialAnnouncements: AnnouncementItem[] = [
     publicationType: 'Artigo Jurídico',
     tag: 'Direito Civil',
     title: 'Segurança Jurídica na Aquisição de Imóveis e Redação Contratual',
-    date: '28 de Setembro de 2026',
+    date: 'Modelo Ilustrativo · Para Aprovação',
     author: 'Advocacia Nicolau',
     readTime: '5 min de leitura',
-    image: '/legal_desk_calltoaction.webp',
-    excerpt: 'Aspectos preventivos na due diligence imobiliária para mitigar riscos de evicção, fraudes e disputas possessórias.',
+    image: pubCivilImg,
+    excerpt:
+      'Conteúdo demonstrativo para apresentação visual da área Cível: aspectos preventivos na análise documental e redação de contratos.',
     featured: true,
     content: [
-      'A celebração de contratos que envolvem transmissão de propriedade ou posse de bens imóveis exige rigor técnico absoluto. Cláusulas genéricas ou minutas desprovidas de estudo prévio abrem espaço para litígios onerosos.',
-      'A análise de certidões cíveis, criminais, trabalhistas e fiscais em nome dos transmitentes (due diligence imobiliária) é imprescindível para atestar a boa-fé do adquirente e repelir riscos de fraude contra credores ou execução.',
-      'Além disso, a adequada caracterização das arras, cláusulas penais compensatórias, prazos resolutivos e previsão expressa de responsabilidade por vícios ocultos garantem o equilíbrio financeiro do negócio.',
-      'A atuação consultiva e preventiva de um escritório com vivência forense resguarda o investimento e afasta litígios que poderiam perdurar por anos no Judiciário.',
+      'A celebração de contratos envolvendo transmissão de propriedade ou posse de bens imóveis demanda análise documental minuciosa e redação clara das obrigações assumidas pelas partes.',
+      'A verificação prévia de certidões e cláusulas resolutivas previne litígios onerosos e confere maior previsibilidade às relações patrimoniais.',
+      'Este texto é um modelo demonstrativo reservado à futura substituição por artigo técnico redigido e aprovado pelo corpo jurídico da Advocacia Nicolau.',
     ],
   },
   {
     id: 'planejamento-sucessorio',
     publicationType: 'Artigo Jurídico',
     tag: 'Direito de Família',
-    title: 'Planejamento Sucessório e Partilha: Preservação do Patrimônio e Harmonia Familiar',
-    date: '10 de Setembro de 2026',
-    author: 'Advocacia Nicolau',
-    readTime: '6 min de leitura',
-    image: '/office_facade_nicolau.webp',
-    excerpt: 'Como a estruturação jurídica antecipada evita desgastes emocionais e minimiza a carga tributária na sucessão de bens.',
-    featured: true,
-    content: [
-      'A sucessão hereditária é um dos momentos mais sensíveis na trajetória de qualquer núcleo familiar e empresarial. Quando não planejada, pode desencadear conflitos duradouros e a dilapidação do patrimônio acumulado ao longo de gerações.',
-      'O planejamento sucessório viabiliza instrumentos eficazes como testamentos públicos, doações com reserva de usufruto, cláusulas de incomunicabilidade e inalienabilidade, bem como a constituição de holdings patrimoniais.',
-      'Na esfera do Direito de Família e Sucessões, nosso compromisso primordial é conciliar a segurança patrimonial com a preservação dos laços afetivos, privilegiando acordos e soluções personalizadas que respeitem a vontade das partes.',
-    ],
-  },
-  {
-    id: 'com-4',
-    publicationType: 'Notícia',
-    tag: 'Tribunal do Júri',
-    title: 'Atuação Técnica Forense no Tribunal do Júri e Defesa das Garantias Processuais',
-    date: '18 de Outubro de 2026',
-    author: 'Advocacia Nicolau',
-    readTime: '3 min de leitura',
-    image: '/team_congresso.webp',
-    excerpt: 'Sustentação oral e rigor na análise de perícias balísticas e documentais perante o Conselho de Sentença.',
-    featured: false,
-    content: [
-      'A defesa em plenário do Tribunal do Júri requer dedicação exclusiva, oratória precisa e profundo domínio das ciências forenses e da medicina legal.',
-      'Nossa equipe jurídica atua em todas as etapas, desde a fase investigativa e pronúncia até os debates finais em sessão solene de júri popular.',
-      'Reafirmamos o zelo pelo contraditório efetivo e a preservação do estado de inocência como esteio do Estado Democrático de Direito.'
-    ],
-  },
-  {
-    id: 'com-5',
-    publicationType: 'Artigo Jurídico',
-    tag: 'Direito Civil & Sucessório',
-    title: 'Planejamento Sucessório e Proteção Patrimonial Preventiva para Famílias',
-    date: '10 de Outubro de 2026',
+    title: 'Planejamento Sucessório e Partilha: Preservação do Patrimônio Familiar',
+    date: 'Modelo Ilustrativo · Para Aprovação',
     author: 'Advocacia Nicolau',
     readTime: '4 min de leitura',
-    image: '/legal_desk_calltoaction.webp',
-    excerpt: 'Estruturação jurídica personalizada de holdings familiares, doações com cláusulas protetivas e governança sucessória.',
-    featured: false,
+    image: pubFamilyImg,
+    excerpt:
+      'Conteúdo demonstrativo para apresentação visual de Direito de Família: organização patrimonial antecipada e segurança jurídica sucessória.',
+    featured: true,
     content: [
-      'O planejamento sucessório e patrimonial preventivo representa uma das ferramentas mais eficazes para garantir a continuidade do patrimônio e a harmonia familiar.',
-      'Nossa consultoria jurídica elabora instrumentos sob medida, minimizando litígios e custos tributários em transmissões de bens e quotas.',
-      'Realizamos diagnóstico detalhado do patrimônio com total confidencialidade e segurança jurídica.'
-    ],
-  },
-  {
-    id: 'com-6',
-    publicationType: 'Comunicado Institucional',
-    tag: 'Institucional & Tradição',
-    title: 'Mais de Quatro Décadas de Advocacia Ética e Combate Incessante no Paraná',
-    date: '28 de Setembro de 2026',
-    author: 'Advocacia Nicolau',
-    readTime: '3 min de leitura',
-    image: '/destaque_isis_sample.webp',
-    excerpt: 'Balanço das mais de quatro décadas de atuação contínua da banca em Guarapuava, Curitiba e comarcas de todo o Paraná.',
-    featured: false,
-    content: [
-      'Desde a fundação em 1978 pelo Dr. Miguel Nicolau Junior, o escritório consolidou sua reputação baseada na lealdade aos clientes, na técnica refinada e na coragem jurídica.',
-      'Ao longo de décadas, acumulamos precedentes favoráveis, atuação combativa em tribunais e a confiança inabalável da sociedade paranaense.',
-      'Seguimos integrando tradição jurídica com atendimento próximo, ético e humanizado.'
+      'O planejamento sucessório permite organizar de forma transparente e juridicamente segura a destinação do patrimônio familiar, reduzindo conflitos futuros.',
+      'Instrumentos como testamentos, doações e inventários conduzidos com acompanhamento especializado preservam tanto os bens quanto os vínculos familiares.',
+      'Este texto é um modelo demonstrativo reservado à futura substituição por artigo técnico redigido e aprovado pelo corpo jurídico da Advocacia Nicolau.',
     ],
   },
 ];
 
 export const initialAnnouncementIds = new Set(initialAnnouncements.map((a) => a.id));
+
+const LEGACY_UNAPPROVED_MOCK_IDS = new Set([
+  'com-1',
+  'com-2',
+  'com-3',
+  'com-4',
+  'com-5',
+  'com-6',
+]);
+
+const replaceLegacyStockImage = (img: string | undefined, tag?: string, id?: string): string => {
+  if (!img) {
+    return pubReceptionImg;
+  }
+  const isLegacyStock =
+    img.includes('hero_justice_themis') ||
+    img.includes('office_facade_nicolau') ||
+    img.includes('destaque_isis_sample') ||
+    img.includes('legal_desk_calltoaction') ||
+    img.includes('team_congresso');
+
+  if (!isLegacyStock) return img;
+
+  const lowerTag = (tag || '').toLowerCase();
+  if (id === 'garantias-criminais' || lowerTag.includes('criminal') || lowerTag.includes('júri')) {
+    return pubCriminalImg;
+  }
+  if (id === 'contratos-imobiliarios' || lowerTag.includes('civil') || lowerTag.includes('imobili')) {
+    return pubCivilImg;
+  }
+  if (id === 'planejamento-sucessorio' || lowerTag.includes('família') || lowerTag.includes('sucess')) {
+    return pubFamilyImg;
+  }
+  return pubReceptionImg;
+};
 
 const ANNOUNCEMENTS_STORAGE_KEY = 'nicolau_announcements_data';
 const ANNOUNCEMENTS_CHANNEL_NAME = 'nicolau_portal_sync';
@@ -802,26 +756,32 @@ export const subscribeAnnouncementsSync = (onSync: (items: AnnouncementItem[]) =
 };
 
 const normalizeAnnouncements = (list: AnnouncementItem[]): AnnouncementItem[] => {
-  const hasFeaturedProp = list.some((item) => typeof item?.featured === 'boolean');
-  return list
-    .filter((item) => item && typeof item === 'object' && typeof item.title === 'string')
-    .map((item, idx) => ({
-      ...item,
-      id: item.id || `pub-${idx}-${Date.now()}`,
-      publicationType:
-        item.publicationType ||
-        (item.id?.startsWith('art-') || item.tag?.startsWith('Direito')
-          ? 'Artigo Jurídico'
-          : 'Comunicado Institucional'),
-      tag: item.tag || 'Nota Oficial',
-      date: item.date || '',
-      author: item.author || 'Advocacia Nicolau',
-      readTime: item.readTime || '3 min de leitura',
-      image: item.image || '/team_juri.webp',
-      excerpt: item.excerpt || '',
-      content: Array.isArray(item.content) && item.content.length > 0 ? item.content : [item.excerpt || item.title],
-      featured: hasFeaturedProp ? Boolean(item.featured) : idx < 6,
-    }));
+  const filtered = list.filter(
+    (item) =>
+      item &&
+      typeof item === 'object' &&
+      typeof item.title === 'string' &&
+      !LEGACY_UNAPPROVED_MOCK_IDS.has(item.id)
+  );
+  const source = filtered.length > 0 ? filtered : initialAnnouncements;
+  const hasFeaturedProp = source.some((item) => typeof item?.featured === 'boolean');
+  return source.map((item, idx) => ({
+    ...item,
+    id: item.id || `pub-${idx}-${Date.now()}`,
+    publicationType:
+      item.publicationType ||
+      (item.id?.startsWith('art-') || item.tag?.startsWith('Direito')
+        ? 'Artigo Jurídico'
+        : 'Comunicado Institucional'),
+    tag: item.tag || 'Nota Oficial',
+    date: item.date || '',
+    author: item.author || 'Advocacia Nicolau',
+    readTime: item.readTime || '3 min de leitura',
+    image: replaceLegacyStockImage(item.image, item.tag, item.id),
+    excerpt: item.excerpt || '',
+    content: Array.isArray(item.content) && item.content.length > 0 ? item.content : [item.excerpt || item.title],
+    featured: hasFeaturedProp ? Boolean(item.featured) : idx < 6,
+  }));
 };
 
 export const getStoredAnnouncements = (): AnnouncementItem[] => {
@@ -855,7 +815,7 @@ export const saveStoredAnnouncements = (items: AnnouncementItem[]): boolean => {
   // Fallback for localStorage 5MB quota: keep text/metadata in localStorage while IndexedDB holds full images
   const lightweightCopy = normalized.map((item) =>
     item.image.startsWith('data:image') && item.image.length > 150000
-      ? { ...item, image: '/team_juri.webp' }
+      ? { ...item, image: pubReceptionImg }
       : item
   );
   return safeSaveToStorage(ANNOUNCEMENTS_STORAGE_KEY, lightweightCopy);

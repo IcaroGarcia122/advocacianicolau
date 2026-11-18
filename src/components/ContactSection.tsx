@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ContactInfo, buildGoogleMapsEmbedUrl, initialContactInfo, toEmbeddableMapsUrl } from '../data/officeData';
+import {
+  ContactInfo,
+  buildGoogleMapsEmbedUrl,
+  getStoredClientLeads,
+  initialContactInfo,
+  saveStoredClientLeads,
+  toEmbeddableMapsUrl,
+} from '../data/officeData';
 import {
   MapPin,
   Phone,
@@ -54,20 +61,41 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const whatsappMessageText = `*Contato via Site Advocacia Nicolau*\n\n*Nome:* ${formData.name}\n*Telefone:* ${formData.phone}\n*E-mail:* ${formData.email}\n*Área:* ${formData.area}\n*Mensagem:* ${formData.message}`;
+  const whatsappDirectHref = `https://wa.me/${contactInfo.whatsappNumberDigits}?text=${encodeURIComponent(whatsappMessageText)}`;
+  const emailSubject = `Contato pelo site — ${formData.area} (${formData.name || 'Visitante'})`;
+  const emailBody = `Nome: ${formData.name}\nTelefone/WhatsApp: ${formData.phone}\nE-mail: ${formData.email}\nÁrea de Interesse: ${formData.area}\n\nMensagem:\n${formData.message}`;
+  const mailtoDirectHref = `mailto:${contactInfo.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    // Save lead in client leads store for Administrative Panel tracking
+    const currentLeads = getStoredClientLeads();
+    const now = new Date();
+    const formattedDate = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })}`;
+    saveStoredClientLeads([
+      {
+        id: `lead-${Date.now()}`,
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim(),
+        area: formData.area,
+        message: formData.message.trim(),
+        date: formattedDate,
+        status: 'Novo',
+      },
+      ...currentLeads,
+    ]);
+
     setTimeout(() => {
       setIsSubmitting(false);
       setIsSubmitted(true);
-
-      if (sendViaWhatsApp) {
-        const text = `*Contato via Site Advocacia Nicolau*\n\n*Nome:* ${formData.name}\n*Telefone:* ${formData.phone}\n*E-mail:* ${formData.email}\n*Área:* ${formData.area}\n*Mensagem:* ${formData.message}`;
-        const waUrl = `https://wa.me/${contactInfo.whatsappNumberDigits}?text=${encodeURIComponent(text)}`;
-        window.open(waUrl, '_blank', 'noopener,noreferrer');
-      }
-    }, 600);
+    }, 350);
   };
 
   const handleSaveContactSettings = (e: React.FormEvent) => {
@@ -295,33 +323,59 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
               </div>
 
               {isSubmitted ? (
-                <div className="py-12 px-6 text-center bg-[#17130F] border border-[#B89554] rounded-2xl animate-fadeIn">
-                  <CheckCircle className="w-12 h-12 text-[#D6B779] mx-auto mb-4" />
-                  <h4
-                    className="text-2xl font-normal text-[#FAF8F4] mb-2"
-                    style={{ fontFamily: "'Cormorant Garamond', serif" }}
-                  >
-                    Mensagem Recebida com Sucesso
-                  </h4>
-                  <p className="text-sm text-[#FAF8F4]/80 max-w-md mx-auto mb-6 font-light">
-                    Agradecemos o contato. Nossa equipe jurídica entrará em contato com você o mais
-                    breve possível respeitando o sigilo do seu caso.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setIsSubmitted(false);
-                      setFormData({
-                        name: '',
-                        phone: '',
-                        email: '',
-                        area: 'Direito Criminal',
-                        message: '',
-                      });
-                    }}
-                    className="px-6 py-2.5 border border-[#B89554] text-[#D6B779] text-xs uppercase tracking-widest hover:bg-[#B89554] hover:text-[#17130F] rounded-full transition-colors cursor-pointer"
-                  >
-                    Enviar Outra Mensagem
-                  </button>
+                <div className="py-10 px-6 text-center bg-[#17130F] border border-[#B89554] rounded-2xl animate-fadeIn space-y-5">
+                  <CheckCircle className="w-12 h-12 text-[#D6B779] mx-auto" />
+                  <div>
+                    <h4
+                      className="text-2xl font-normal text-[#FAF8F4] mb-2"
+                      style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                    >
+                      Mensagem Registrada
+                    </h4>
+                    <p className="text-sm text-[#FAF8F4]/80 max-w-md mx-auto font-light">
+                      Para concluir o encaminhamento imediato à nossa equipe, selecione abaixo o canal de envio com os dados já preenchidos:
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
+                    {sendViaWhatsApp && (
+                      <a
+                        href={whatsappDirectHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#CBA86B] hover:bg-[#D6B779] text-[#17130F] text-xs font-semibold uppercase tracking-wider rounded-full transition-colors"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        <span>Enviar via WhatsApp</span>
+                      </a>
+                    )}
+                    <a
+                      href={mailtoDirectHref}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 border border-[#B89554] text-[#D6B779] hover:bg-[#B89554] hover:text-[#17130F] text-xs font-semibold uppercase tracking-wider rounded-full transition-colors"
+                    >
+                      <Mail className="w-4 h-4" />
+                      <span>Enviar por E-mail</span>
+                    </a>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSubmitted(false);
+                        setFormData({
+                          name: '',
+                          phone: '',
+                          email: '',
+                          area: 'Direito Criminal',
+                          message: '',
+                        });
+                      }}
+                      className="text-xs text-[#FAF8F4]/65 hover:text-[#D6B779] underline underline-offset-4 cursor-pointer"
+                    >
+                      Enviar outra mensagem
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
@@ -401,7 +455,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                       rows={4}
                       value={formData.message}
                       onChange={handleInputChange}
-                      placeholder="Descreva as principais circunstâncias do seu caso. Garantimos absoluto sigilo..."
+                      placeholder="Descreva brevemente o assunto sobre o qual deseja atendimento."
                       className="w-full px-4 py-3 bg-[#17130F] border border-[#B89554]/30 rounded-xl text-[#FAF8F4] text-sm focus:border-[#D6B779] focus:outline-none transition-colors resize-none"
                     />
                   </div>

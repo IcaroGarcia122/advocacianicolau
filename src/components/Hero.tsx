@@ -22,7 +22,7 @@ export const Hero: React.FC<HeroProps> = ({
   const [isTyping, setIsTyping] = useState(true);
 
   useEffect(() => {
-    const fullText = heroSettings.sloganHighlight || 'a sua jornada.';
+    const fullText = heroSettings.sloganHighlight || 'a sua causa.';
     let currentIdx = 0;
     setTypedText('');
     setIsTyping(true);

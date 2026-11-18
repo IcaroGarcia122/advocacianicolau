@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, Search, Clock, Calendar, BookOpen, Volume2, VolumeX, Share2, Check, ArrowRight, MessageSquare } from 'lucide-react';
-import { articles, Article, ContactInfo } from '../data/officeData';
+import { articles, Article, ContactInfo, editorialVisualAssets } from '../data/officeData';
 import { Logo } from './Logo';
 
 interface TechnicalProductionPageProps {
@@ -321,7 +321,7 @@ export const TechnicalProductionPage: React.FC<TechnicalProductionPageProps> = (
                     decoding="async"
                     onError={(e) => {
                       const target = e.currentTarget;
-                      target.src = '/hero_justice_themis.webp';
+                      target.src = editorialVisualAssets.reception;
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#1D1713] via-transparent to-black/20" />

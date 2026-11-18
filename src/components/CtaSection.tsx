@@ -1,6 +1,6 @@
 import React from 'react';
 import { MapPin } from 'lucide-react';
-import { ContactInfo } from '../data/officeData';
+import { ContactInfo, editorialVisualAssets } from '../data/officeData';
 
 interface CtaSectionProps {
   contactInfo: ContactInfo;
@@ -16,18 +16,14 @@ export const CtaSection: React.FC<CtaSectionProps> = ({ contactInfo }) => {
       {/* Top subtle transition bar */}
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#FAF7F2]/20 via-[#B89554]/40 to-[#FAF7F2]/20 z-10" />
 
-      {/* Full-bleed background image taking the ENTIRE section with gradient and blur */}
+      {/* Full-bleed architectural background photo with smooth espresso gradient */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <img
-          src="/fountain_pen_crop.webp"
-          alt="Caneta tinteiro e documentos jurídicos"
-          className="w-full h-full object-cover object-left filter brightness-[0.92] contrast-[1.08]"
+          src={editorialVisualAssets.reception}
+          alt="Ambiente de recepção da Advocacia Nicolau"
+          className="w-full h-full object-cover object-center filter brightness-[0.82] contrast-[1.05]"
           loading="lazy"
           decoding="async"
-          onError={(e) => {
-            const target = e.currentTarget;
-            target.src = '/fountain_pen_crop.png';
-          }}
           referrerPolicy="no-referrer"
         />
         {/* Degrade horizontal pegando a sessão inteira para destacar as palavras */}

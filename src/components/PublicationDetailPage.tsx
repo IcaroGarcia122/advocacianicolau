@@ -12,7 +12,7 @@ import {
   VolumeX,
   BookOpen,
 } from 'lucide-react';
-import { AnnouncementItem, ContactInfo } from '../data/officeData';
+import { AnnouncementItem, ContactInfo, editorialVisualAssets } from '../data/officeData';
 import { Logo } from './Logo';
 
 interface PublicationDetailPageProps {
@@ -258,7 +258,7 @@ export const PublicationDetailPage: React.FC<PublicationDetailPageProps> = ({
                 alt={publication.title}
                 className="w-full h-full max-h-[460px] object-cover"
                 onError={(e) => {
-                  e.currentTarget.src = '/team_juri.webp';
+                  e.currentTarget.src = editorialVisualAssets.reception;
                 }}
               />
             </div>
@@ -354,7 +354,7 @@ export const PublicationDetailPage: React.FC<PublicationDetailPageProps> = ({
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           loading="lazy"
                           onError={(e) => {
-                            e.currentTarget.src = '/team_juri.webp';
+                            e.currentTarget.src = editorialVisualAssets.reception;
                           }}
                         />
                         <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#17130F]/90 text-[#D6B779] text-[10px] font-semibold">

@@ -29,29 +29,38 @@ import { PrivacyModal } from './components/PrivacyModal';
 import { AnnouncementsPage } from './components/AnnouncementsPage';
 import { PublicationDetailPage } from './components/PublicationDetailPage';
 import { LawyerDetailPage } from './components/LawyerDetailPage';
+import { PracticeAreaDetailPage } from './components/PracticeAreaDetailPage';
 import { AdminPanel } from './components/AdminPanel';
 import { AnnouncementsSection } from './components/AnnouncementsSection';
+import { practiceAreas } from './data/officeData';
 
 type AppView =
   | 'institutional'
   | 'publications'
   | 'publication-detail'
   | 'lawyer-detail'
+  | 'area-detail'
   | 'admin';
 
 const parseHashState = (
   hash: string
-): { view: AppView; publicationId: string | null; lawyerId: string | null } => {
+): { view: AppView; publicationId: string | null; lawyerId: string | null; areaId: string | null } => {
+  if (hash.startsWith('#area/')) {
+    const id = decodeURIComponent(hash.slice('#area/'.length)).trim();
+    if (id) {
+      return { view: 'area-detail', publicationId: null, lawyerId: null, areaId: id };
+    }
+  }
   if (hash.startsWith('#advogado/')) {
     const id = decodeURIComponent(hash.slice('#advogado/'.length)).trim();
     if (id) {
-      return { view: 'lawyer-detail', publicationId: null, lawyerId: id };
+      return { view: 'lawyer-detail', publicationId: null, lawyerId: id, areaId: null };
     }
   }
   if (hash.startsWith('#publicacao/')) {
     const id = decodeURIComponent(hash.slice('#publicacao/'.length)).trim();
     if (id) {
-      return { view: 'publication-detail', publicationId: id, lawyerId: null };
+      return { view: 'publication-detail', publicationId: id, lawyerId: null, areaId: null };
     }
   }
   if (
@@ -60,12 +69,12 @@ const parseHashState = (
     hash === '#pagina-comunicados' ||
     hash === '#producao-tecnica'
   ) {
-    return { view: 'publications', publicationId: null, lawyerId: null };
+    return { view: 'publications', publicationId: null, lawyerId: null, areaId: null };
   }
   if (hash === '#admin' || hash === '#painel') {
-    return { view: 'admin', publicationId: null, lawyerId: null };
+    return { view: 'admin', publicationId: null, lawyerId: null, areaId: null };
   }
-  return { view: 'institutional', publicationId: null, lawyerId: null };
+  return { view: 'institutional', publicationId: null, lawyerId: null, areaId: null };
 };
 
 const loadNormalizedContactInfo = (): ContactInfo => {
@@ -139,6 +148,26 @@ const loadNormalizedContactInfo = (): ContactInfo => {
   }
 };
 
+const loadNormalizedHeroSettings = (): HeroSettings => {
+  const stored = getStoredHeroSettings();
+  const isLegacyHeadline =
+    stored.sloganHighlight === 'a sua jornada.' ||
+    stored.subtitle.includes('construindo uma história de credibilidade');
+  if (!isLegacyHeadline) {
+    return stored;
+  }
+  const migrated: HeroSettings = {
+    ...stored,
+    sloganPart1: 'Tradição, experiência e',
+    sloganPart2: 'compromisso com',
+    sloganHighlight: 'a sua causa.',
+    subtitle:
+      'Atuação nas áreas Criminal, Cível e de Família, pautada pela ética, seriedade e dedicação à defesa dos direitos e interesses de nossos clientes.',
+  };
+  saveStoredHeroSettings(migrated);
+  return migrated;
+};
+
 export default function App() {
   const initialRoute = parseHashState(window.location.hash);
   const [currentView, setCurrentView] = useState<AppView>(initialRoute.view);
@@ -148,12 +177,15 @@ export default function App() {
   const [selectedLawyerId, setSelectedLawyerId] = useState<string | null>(
     initialRoute.lawyerId
   );
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(
+    initialRoute.areaId
+  );
 
   const [contactInfo, setContactInfo] = useState<ContactInfo>(() =>
     loadNormalizedContactInfo()
   );
 
-  const [heroSettings, setHeroSettings] = useState<HeroSettings>(() => getStoredHeroSettings());
+  const [heroSettings, setHeroSettings] = useState<HeroSettings>(() => loadNormalizedHeroSettings());
   const [articlesList, setArticlesList] = useState<Article[]>(() => getStoredArticles());
   const [lawyersList, setLawyersList] = useState<Lawyer[]>(() => getStoredLawyers());
   const [announcementsList, setAnnouncementsList] = useState<AnnouncementItem[]>(() =>
@@ -191,6 +223,7 @@ export default function App() {
       setCurrentView(next.view);
       setSelectedPublicationId(next.publicationId);
       setSelectedLawyerId(next.lawyerId);
+      setSelectedAreaId(next.areaId);
       if (next.view !== 'institutional') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -287,6 +320,7 @@ export default function App() {
     setCurrentView('publications');
     setSelectedPublicationId(null);
     setSelectedLawyerId(null);
+    setSelectedAreaId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -294,6 +328,7 @@ export default function App() {
     window.location.hash = `publicacao/${encodeURIComponent(id)}`;
     setSelectedPublicationId(id);
     setSelectedLawyerId(null);
+    setSelectedAreaId(null);
     setCurrentView('publication-detail');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -302,7 +337,17 @@ export default function App() {
     window.location.hash = `advogado/${encodeURIComponent(lawyerId)}`;
     setSelectedLawyerId(lawyerId);
     setSelectedPublicationId(null);
+    setSelectedAreaId(null);
     setCurrentView('lawyer-detail');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSelectAreaPage = (areaId: string) => {
+    window.location.hash = `area/${encodeURIComponent(areaId)}`;
+    setSelectedAreaId(areaId);
+    setSelectedPublicationId(null);
+    setSelectedLawyerId(null);
+    setCurrentView('area-detail');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -311,6 +356,7 @@ export default function App() {
     setCurrentView('admin');
     setSelectedPublicationId(null);
     setSelectedLawyerId(null);
+    setSelectedAreaId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -319,6 +365,7 @@ export default function App() {
     setCurrentView('institutional');
     setSelectedPublicationId(null);
     setSelectedLawyerId(null);
+    setSelectedAreaId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -377,6 +424,26 @@ export default function App() {
         onExit={handleBackToInstitutional}
       />
     );
+  }
+
+  // View: Individual Practice Area Page (#area/<id>)
+  if (currentView === 'area-detail' && selectedAreaId) {
+    const activeArea =
+      practiceAreas.find((item) => item.id === selectedAreaId) || practiceAreas[0];
+
+    if (activeArea) {
+      return (
+        <PracticeAreaDetailPage
+          area={activeArea}
+          allAreas={practiceAreas}
+          contactInfo={contactInfo}
+          onBackToHome={handleBackToInstitutional}
+          onBackToAreas={() => scrollToSection('areas')}
+          onSelectArea={handleSelectAreaPage}
+          onScheduleWithArea={handleSelectAreaForContact}
+        />
+      );
+    }
   }
 
   // View: Individual Lawyer Profile Page (#advogado/<id>)
@@ -458,6 +525,7 @@ export default function App() {
         <div className="reveal-on-scroll">
           <PracticeAreas
             contactInfo={contactInfo}
+            onSelectAreaPage={handleSelectAreaPage}
             onSelectAreaForContact={handleSelectAreaForContact}
           />
         </div>
