@@ -56,7 +56,7 @@ export const PracticeAreas: React.FC<PracticeAreasProps> = ({
                 onClick={() => handleOpenArea(practiceAreas[0].id)}
                 className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full border border-[#B89554] text-[#17130F] text-xs font-medium tracking-wider hover:bg-[#B89554] hover:text-[#FAF8F4] transition-all duration-300 cursor-pointer group shadow-sm focus-visible:outline-none"
               >
-                <span>Ver páginas das especialidades</span>
+                <span>Conheça nossas áreas de atuação</span>
                 <ArrowRight className="w-4 h-4 text-[#8C6F36] group-hover:text-[#FAF8F4] transition-transform duration-300 group-hover:translate-x-1" />
               </button>
             </div>
@@ -106,7 +106,7 @@ export const PracticeAreas: React.FC<PracticeAreasProps> = ({
                     }}
                     className="inline-flex items-center gap-1.5 text-xs text-[#8C6F36] group-hover:text-[#17130F] font-semibold tracking-wide cursor-pointer"
                   >
-                    <span>Ver todas as {area.services.length} frentes</span>
+                    <span>Conheça nossa atuação</span>
                     <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                   </button>
                 </div>

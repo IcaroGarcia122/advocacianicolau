@@ -153,16 +153,23 @@ const loadNormalizedHeroSettings = (): HeroSettings => {
   const isLegacyHeadline =
     stored.sloganHighlight === 'a sua jornada.' ||
     stored.subtitle.includes('construindo uma história de credibilidade');
-  if (!isLegacyHeadline) {
+  const isLegacyKicker =
+    !stored.kicker ||
+    stored.kicker.toLowerCase().includes('advocacia tradicional desde 1978');
+
+  if (!isLegacyHeadline && !isLegacyKicker) {
     return stored;
   }
+
   const migrated: HeroSettings = {
     ...stored,
-    sloganPart1: 'Tradição, experiência e',
-    sloganPart2: 'compromisso com',
-    sloganHighlight: 'a sua causa.',
-    subtitle:
-      'Atuação nas áreas Criminal, Cível e de Família, pautada pela ética, seriedade e dedicação à defesa dos direitos e interesses de nossos clientes.',
+    kicker: isLegacyKicker ? 'Advocacia Nicolau – Desde 1978' : stored.kicker,
+    sloganPart1: isLegacyHeadline ? 'Tradição, experiência e' : stored.sloganPart1,
+    sloganPart2: isLegacyHeadline ? 'compromisso com' : stored.sloganPart2,
+    sloganHighlight: isLegacyHeadline ? 'a sua causa.' : stored.sloganHighlight,
+    subtitle: isLegacyHeadline
+      ? 'Atuação nas áreas Criminal, Cível e de Família, pautada pela ética, seriedade e dedicação à defesa dos direitos e interesses de nossos clientes.'
+      : stored.subtitle,
   };
   saveStoredHeroSettings(migrated);
   return migrated;

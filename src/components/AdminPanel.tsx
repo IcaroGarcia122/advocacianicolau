@@ -177,7 +177,10 @@ const ImageAttachmentPicker: React.FC<ImageAttachmentPickerProps> = ({
   const officePresets = [
     { label: 'Fachada Sede', path: editorialVisualAssets.facade },
     { label: 'Fachada Vista Externa', path: editorialVisualAssets.facadeAngle },
-    { label: 'Recepção', path: editorialVisualAssets.reception },
+    { label: 'Sala de Atendimento', path: editorialVisualAssets.modernOffice },
+    { label: 'Recepção da Sede', path: editorialVisualAssets.receptionDetails },
+    { label: 'Recepção & Espera', path: editorialVisualAssets.receptionMarble },
+    { label: 'Sala de Reuniões', path: editorialVisualAssets.meetingRoom },
     { label: 'Criminal / Plenário', path: editorialVisualAssets.criminal },
     { label: 'Cível / Contratos', path: editorialVisualAssets.civil },
     { label: 'Família / Sala', path: editorialVisualAssets.family },

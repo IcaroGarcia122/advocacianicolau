@@ -140,31 +140,17 @@ export const LawyerDetailPage: React.FC<LawyerDetailPageProps> = ({
       <main className="flex-1 py-12 sm:py-16 lg:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
-            {/* Left Column: Professional Photograph Portrait */}
+            {/* Left Column: Clean Large Professional Portrait */}
             <div className="lg:col-span-5">
               <div className="sticky top-28">
-                <div className="relative rounded-3xl p-2.5 bg-gradient-to-br from-[#EAD9BA] via-[#B89554] to-[#6E5423] shadow-2xl">
-                  <div className="relative rounded-2xl overflow-hidden bg-[#17130F] aspect-[4/5]">
-                    <img
-                      src={lawyer.image}
-                      alt={`${lawyer.name} — ${lawyer.role} da Advocacia Nicolau`}
-                      className="w-full h-full object-cover object-top"
-                      loading="eager"
-                      decoding="sync"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#17130F]/85 via-transparent to-transparent pointer-events-none" />
-                    <div className="absolute bottom-5 left-5 right-5 text-[#FAF8F4]">
-                      <span
-                        className="inline-block px-3 py-1 rounded-full bg-[#B89554]/90 text-[#17130F] text-[10px] font-bold uppercase tracking-[0.18em] mb-2"
-                        style={{ fontFamily: "'Cinzel', serif" }}
-                      >
-                        {lawyer.oab}
-                      </span>
-                      <p className="text-xs uppercase tracking-[0.2em] text-[#D6B779] font-medium">
-                        {lawyer.role}
-                      </p>
-                    </div>
-                  </div>
+                <div className="relative rounded-3xl overflow-hidden border border-[#B89554]/45 bg-[#17130F] shadow-2xl aspect-[3/4]">
+                  <img
+                    src={lawyer.image}
+                    alt={`${lawyer.name} — ${lawyer.role} da Advocacia Nicolau`}
+                    className="w-full h-full object-cover object-top"
+                    loading="eager"
+                    decoding="sync"
+                  />
                 </div>
 
                 {/* Direct Contact Card below photo */}
@@ -208,17 +194,19 @@ export const LawyerDetailPage: React.FC<LawyerDetailPageProps> = ({
               </div>
             </div>
 
-            {/* Right Column: Highlighted Name, Credentials, Biography */}
+            {/* Right Column: Highlighted Name, Legible Credentials, Biography */}
             <div className="lg:col-span-7 space-y-8">
               <div className="border-b border-[#B89554]/30 pb-7">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                  <div className="inline-flex items-center gap-2.5">
-                    <span className="w-8 h-[1.5px] bg-[#8C6F36]" />
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                  <div className="flex flex-wrap items-center gap-3">
                     <span
-                      className="text-xs uppercase tracking-[0.26em] text-[#8C6F36] font-semibold"
+                      className="text-xs sm:text-sm uppercase tracking-[0.22em] text-[#8C6F36] font-semibold"
                       style={{ fontFamily: "'Cinzel', serif" }}
                     >
-                      {lawyer.role} · {lawyer.oab}
+                      {lawyer.role}
+                    </span>
+                    <span className="px-3 py-1 rounded bg-[#17130F] text-[#D6B779] text-xs sm:text-sm font-semibold tracking-wide">
+                      {lawyer.oab}
                     </span>
                   </div>
 
@@ -248,7 +236,7 @@ export const LawyerDetailPage: React.FC<LawyerDetailPageProps> = ({
                   {lawyer.name}
                 </h1>
 
-                <p className="text-base sm:text-lg text-[#3A3028] font-normal leading-relaxed border-l-2 border-[#B89554] pl-4">
+                <p className="text-base sm:text-lg text-[#2E2721] font-normal leading-relaxed border-l-2 border-[#B89554] pl-4">
                   {lawyer.summary}
                 </p>
               </div>
@@ -259,14 +247,14 @@ export const LawyerDetailPage: React.FC<LawyerDetailPageProps> = ({
                   <UserCheck className="w-4 h-4" />
                   <h2
                     id="bio-heading"
-                    className="text-xs uppercase tracking-[0.24em] font-semibold"
+                    className="text-xs sm:text-sm uppercase tracking-[0.22em] font-semibold"
                     style={{ fontFamily: "'Cinzel', serif" }}
                   >
                     Biografia & Atuação Profissional
                   </h2>
                 </div>
 
-                <div className="bg-white rounded-3xl border border-[#B89554]/25 p-6 sm:p-8 shadow-sm space-y-4 text-base text-[#2E2721] font-light leading-[1.8]">
+                <div className="bg-white rounded-3xl border border-[#B89554]/30 p-6 sm:p-8 shadow-sm space-y-4 text-base sm:text-[17px] text-[#1F1914] font-normal leading-[1.8]">
                   {bioParagraphs.map((paragraph, index) => (
                     <p key={index}>{paragraph}</p>
                   ))}

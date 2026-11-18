@@ -4,12 +4,20 @@ import pubFamilyImg from '../assets/images/pub_editorial_family_planning_1795023
 import pubReceptionImg from '../assets/images/pub_editorial_reception_office_1795023555594.jpg';
 import officeFacadeFrontImg from '../assets/images/Fachada da Advocacia Nicolau em Destaque (1).webp';
 import officeFacadeAngleImg from '../assets/images/Imagem do ChatGPT 18 de nov. de 2026, 15_08_42.png';
+import officeReceptionDetailsImg from '../assets/images/Recepção Moderna com Detalhes Elegantes.png';
+import officeModernInteriorImg from '../assets/images/Escritório de Advocacia Moderno e Elegante.png';
+import officeReceptionMarbleImg from '../assets/images/Recepção moderna com mármore e madeira (1).png';
+import officeMeetingRoomImg from '../assets/images/Sala de Reuniões Elegante e Acolhedora (2).png';
 
 export const editorialVisualAssets = {
   criminal: pubCriminalImg,
   civil: pubCivilImg,
   family: pubFamilyImg,
   reception: pubReceptionImg,
+  receptionDetails: officeReceptionDetailsImg,
+  receptionMarble: officeReceptionMarbleImg,
+  meetingRoom: officeMeetingRoomImg,
+  modernOffice: officeModernInteriorImg,
   facade: officeFacadeFrontImg,
   facadeAngle: officeFacadeAngleImg,
   team: '/team_juri.webp',
@@ -316,7 +324,7 @@ export interface HeroSettings {
 }
 
 export const initialHeroSettings: HeroSettings = {
-  kicker: 'ADVOCACIA TRADICIONAL DESDE 1978',
+  kicker: 'Advocacia Nicolau – Desde 1978',
   sloganPart1: 'Tradição, experiência e',
   sloganPart2: 'compromisso com',
   sloganHighlight: 'a sua causa.',

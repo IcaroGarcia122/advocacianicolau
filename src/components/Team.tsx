@@ -32,29 +32,11 @@ export const Team: React.FC<TeamProps> = ({
   };
 
   return (
-    <section id="equipe" className="relative py-24 lg:py-32 bg-[#FFFFFF] text-[#17130F] overflow-hidden min-h-[620px] flex items-center">
-      {/* Desktop Only: Full-bleed team photo on the RIGHT with subtle gradient overlay */}
-      <div className="hidden lg:block absolute inset-y-0 right-0 w-[50%] xl:w-[53%] z-0 overflow-hidden pointer-events-none">
-        <img
-          src="/team_congresso.webp"
-          alt="Advogados da Advocacia Nicolau"
-          className="w-full h-full object-cover object-[center_10%] -translate-y-4 sm:-translate-y-6 lg:-translate-y-8 scale-105 filter brightness-[0.98] contrast-[1.04]"
-          loading="lazy"
-          decoding="async"
-          onError={(e) => {
-            const target = e.currentTarget;
-            target.src = '/team_congresso.jpg';
-          }}
-        />
-        {/* Soft gradient on the left edge to smoothly fade into white */}
-        <div className="absolute inset-y-0 left-0 w-28 sm:w-40 lg:w-56 bg-gradient-to-r from-white via-white/35 to-transparent z-10" />
-      </div>
-
+    <section id="equipe" className="relative py-20 lg:py-28 bg-[#FFFFFF] text-[#17130F] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Left Column: Institutional Team Copy & Lawyers Info placed more to the left */}
-          <div className="lg:col-span-6 flex flex-col justify-center lg:-ml-8 xl:-ml-16 2xl:-ml-24 max-w-xl lg:max-w-none">
-            {/* Kicker with Line */}
+        {/* Top Row: Editorial Intro & Team Photograph */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+          <div className="lg:col-span-6 flex flex-col justify-center">
             <div className="flex items-center gap-3.5 mb-5">
               <span
                 className="text-xs sm:text-sm uppercase tracking-[0.25em] text-[#8C6F36] font-semibold"
@@ -65,79 +47,20 @@ export const Team: React.FC<TeamProps> = ({
               <span className="w-16 sm:w-24 h-[1.5px] bg-[#8C6F36]/50" />
             </div>
 
-            {/* Title matching reference image */}
             <h2
-              className="text-3xl sm:text-4xl lg:text-[2.85rem] font-normal leading-[1.14] mb-5 text-[#17130F]"
+              className="text-3xl sm:text-4xl lg:text-[3rem] font-normal leading-[1.12] mb-5 text-[#17130F]"
               style={{
                 fontFamily: "'Playfair Display', Georgia, serif",
               }}
             >
-              Profissionais<br />
-              comprometidos<br />
-              <span className="text-[#8C6F36] italic font-normal">com a sua causa.</span>
+              Conheça nossos{' '}
+              <span className="text-[#8C6F36] italic font-normal">advogados.</span>
             </h2>
 
-            {/* Description */}
-            <p className="text-sm sm:text-base lg:text-[1.05rem] text-[#2E2721] font-normal leading-relaxed mb-6 max-w-lg">
+            <p className="text-sm sm:text-base lg:text-[1.05rem] text-[#2E2721] font-normal leading-relaxed mb-8 max-w-xl">
               Contamos com uma equipe de advogados qualificados, prontos para oferecer um atendimento personalizado e soluções jurídicas eficazes nas esferas criminal, cível e familiar.
             </p>
 
-            {/* Lawyers Highlighted Cards with Individual Profile Buttons */}
-            <div className="pt-5 border-t border-[#8C6F36]/25 mb-8 max-w-xl">
-              <span
-                className="text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-[#8C6F36] font-semibold block mb-3.5"
-                style={{ fontFamily: "'Cinzel', serif" }}
-              >
-                Advogados Integrantes · Conheça cada Perfil
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {lawyersList.map((lawyer) => (
-                  <div
-                    key={lawyer.id}
-                    className="group p-3.5 rounded-2xl bg-[#FAF8F4] border border-[#B89554]/40 hover:border-[#8C6F36] shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2.5 mb-2.5">
-                        <img
-                          src={lawyer.image}
-                          alt={lawyer.name}
-                          className="w-11 h-11 rounded-full object-cover object-top border border-[#B89554]/60 shrink-0"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        <div className="min-w-0">
-                          <span className="text-[10px] uppercase tracking-wider text-[#8C6F36] font-semibold block truncate">
-                            {lawyer.role}
-                          </span>
-                          <span className="text-[11px] text-[#5C4A26] font-mono block font-semibold">
-                            {lawyer.oab}
-                          </span>
-                        </div>
-                      </div>
-
-                      <h4
-                        className="text-base sm:text-[1.05rem] font-bold text-[#17130F] group-hover:text-[#8C6F36] transition-colors leading-snug"
-                        style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-                      >
-                        {lawyer.name}
-                      </h4>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleOpenProfile(lawyer.id)}
-                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-[#17130F] hover:bg-[#8C6F36] text-[#FAF8F4] text-[11px] font-semibold tracking-wide transition-colors cursor-pointer"
-                    >
-                      <UserCheck className="w-3.5 h-3.5 text-[#D6B779] shrink-0" />
-                      <span>Ver Biografia</span>
-                      <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform shrink-0" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Action buttons */}
             <div className="flex flex-wrap items-center gap-4">
               <a
                 href={whatsappUrl}
@@ -159,34 +82,137 @@ export const Team: React.FC<TeamProps> = ({
                 <ArrowRight className="w-4 h-4" />
               </a>
             </div>
+          </div>
 
-            {/* Mobile Framed Team Photo (Moldura elegante abaixo dos textos e informações) */}
-            <div className="block lg:hidden mt-8 sm:mt-10 w-full reveal-on-scroll">
-              <div className="relative rounded-2xl p-2 bg-gradient-to-br from-[#EAD9BA] via-[#D6B779] to-[#8C6F36] shadow-xl">
-                <div className="relative rounded-xl overflow-hidden aspect-[16/10] bg-[#17130F]">
-                  <img
-                    src="/team_congresso.webp"
-                    alt="Advogados da Advocacia Nicolau"
-                    className="w-full h-full object-cover object-[center_12%]"
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      target.src = '/team_congresso.jpg';
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-[11px] font-medium tracking-wide">
-                    <span className="font-serif">Equipe Advocacia Nicolau</span>
-                    <span className="text-[#D6B779] text-[10px] uppercase font-mono tracking-wider">Desde 1978 · Guarapuava/PR</span>
-                  </div>
-                </div>
+          {/* Right Column: Clean Framed Team Photograph */}
+          <div className="lg:col-span-6">
+            <div className="relative rounded-2xl overflow-hidden border border-[#B89554]/35 bg-[#17130F] shadow-xl">
+              <div className="aspect-[16/10] w-full overflow-hidden">
+                <img
+                  src="/team_congresso.webp"
+                  alt="Advogados da Advocacia Nicolau"
+                  className="w-full h-full object-cover object-[center_12%]"
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.src = '/team_congresso.jpg';
+                  }}
+                />
+              </div>
+              <div className="px-5 py-3.5 bg-[#17130F] border-t border-[#B89554]/25 flex items-center justify-between text-xs text-[#FAF8F4]/90">
+                <span className="font-serif text-[#FAF8F4]">Advocacia Nicolau</span>
+                <span
+                  className="text-[10px] uppercase tracking-[0.2em] text-[#D6B779]"
+                  style={{ fontFamily: "'Cinzel', serif" }}
+                >
+                  Guarapuava · Desde 1978
+                </span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Right Column: Spacer where the full-bleed team image shows through */}
-          <div className="lg:col-span-6 hidden lg:block" aria-hidden="true" />
+        {/* Bottom Row: Spacious Individual Lawyer Showcase with Large Portraits & Clear Credentials */}
+        <div className="mt-14 pt-12 border-t border-[#8C6F36]/20">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
+            <div>
+              <span
+                className="text-[11px] uppercase tracking-[0.24em] text-[#8C6F36] font-semibold block mb-1.5"
+                style={{ fontFamily: "'Cinzel', serif" }}
+              >
+                CORPO JURÍDICO · PERFIS INDIVIDUAIS
+              </span>
+              <p className="text-sm text-[#4A3E36]">
+                Selecione um advogado para acessar sua biografia completa, formação e frentes de atuação.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            {lawyersList.map((lawyer) => (
+              <article
+                key={lawyer.id}
+                className="group bg-[#FAF8F4] border border-[#B89554]/35 hover:border-[#8C6F36] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+              >
+                <div>
+                  {/* Large Unobstructed Portrait Photo */}
+                  <div
+                    onClick={() => handleOpenProfile(lawyer.id)}
+                    className="aspect-[4/5] w-full overflow-hidden bg-[#17130F] cursor-pointer"
+                  >
+                    <img
+                      src={lawyer.image}
+                      alt={`${lawyer.name} — ${lawyer.role}`}
+                      className="w-full h-full object-cover object-top group-hover:scale-[1.03] transition-transform duration-500"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+
+                  {/* Clean Legible Credentials & Bio Summary */}
+                  <div className="p-6 space-y-4">
+                    <div className="border-b border-[#B89554]/25 pb-3.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <span
+                          className="text-xs uppercase tracking-[0.16em] text-[#8C6F36] font-semibold"
+                          style={{ fontFamily: "'Cinzel', serif" }}
+                        >
+                          {lawyer.role}
+                        </span>
+                        <span className="text-xs font-semibold text-[#17130F] bg-[#EFE8DA] border border-[#B89554]/40 px-2.5 py-0.5 rounded">
+                          {lawyer.oab}
+                        </span>
+                      </div>
+
+                      <h3
+                        onClick={() => handleOpenProfile(lawyer.id)}
+                        className="text-xl sm:text-2xl font-normal text-[#17130F] group-hover:text-[#8C6F36] transition-colors leading-snug cursor-pointer"
+                        style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                      >
+                        {lawyer.name}
+                      </h3>
+                    </div>
+
+                    <p className="text-sm text-[#2E2721] font-normal leading-relaxed">
+                      {lawyer.summary}
+                    </p>
+
+                    {lawyer.specialties && lawyer.specialties.length > 0 && (
+                      <div className="pt-1 space-y-1.5">
+                        <span className="text-[11px] uppercase tracking-[0.18em] text-[#8C6F36] font-semibold block">
+                          Áreas de Atuação
+                        </span>
+                        <ul className="space-y-1">
+                          {lawyer.specialties.slice(0, 3).map((spec, idx) => (
+                            <li
+                              key={idx}
+                              className="text-xs sm:text-[13px] text-[#17130F]/85 font-medium flex items-start gap-2"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#B89554] mt-1.5 shrink-0" />
+                              <span>{spec}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="px-6 pb-6 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenProfile(lawyer.id)}
+                    className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-[#17130F] hover:bg-[#8C6F36] text-[#FAF8F4] text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+                  >
+                    <UserCheck className="w-4 h-4 text-[#D6B779] shrink-0" />
+                    <span>Ver Biografia</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform shrink-0" />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     </section>

@@ -16,17 +16,45 @@ export const About: React.FC<AboutProps> = ({ contactInfo = initialContactInfo }
       src: editorialVisualAssets.facade,
       alt: 'Fachada frontal da sede própria da Advocacia Nicolau em Guarapuava, PR',
       caption: 'Fachada Frontal',
+      objectPosition: 'object-center',
     },
     {
       src: editorialVisualAssets.facadeAngle,
       alt: 'Vista externa da sede da Advocacia Nicolau em Guarapuava, PR',
       caption: 'Vista Externa da Sede',
+      objectPosition: 'object-center',
+    },
+    {
+      src: editorialVisualAssets.modernOffice,
+      alt: 'Sala de atendimento da Advocacia Nicolau com painel institucional em Guarapuava, PR',
+      caption: 'Sala de Atendimento',
+      objectPosition: 'object-[center_55%]',
+    },
+    {
+      src: editorialVisualAssets.receptionDetails,
+      alt: 'Recepção da Advocacia Nicolau em Guarapuava, PR',
+      caption: 'Recepção da Sede',
+      objectPosition: 'object-[center_62%]',
+    },
+    {
+      src: editorialVisualAssets.receptionMarble,
+      alt: 'Recepção e sala de espera da Advocacia Nicolau em Guarapuava, PR',
+      caption: 'Recepção & Sala de Espera',
+      objectPosition: 'object-[center_62%]',
+    },
+    {
+      src: editorialVisualAssets.meetingRoom,
+      alt: 'Sala de reuniões e atendimento da Advocacia Nicolau em Guarapuava, PR',
+      caption: 'Sala de Reuniões',
+      objectPosition: 'object-[center_55%]',
     },
   ];
 
   const whatsappUrl = `https://wa.me/${contactInfo.whatsappNumberDigits}?text=${encodeURIComponent(
     'Olá! Gostaria de falar com a Advocacia Nicolau sobre os serviços do escritório.'
   )}`;
+
+  const activePhoto = officePhotos[activeOfficePhoto] || officePhotos[0];
 
   return (
     <section
@@ -41,9 +69,9 @@ export const About: React.FC<AboutProps> = ({ contactInfo = initialContactInfo }
               {/* Main Active View */}
               <div className="aspect-[16/10] w-full overflow-hidden bg-[#140F0C]">
                 <img
-                  src={officePhotos[activeOfficePhoto]?.src || editorialVisualAssets.facade}
-                  alt={officePhotos[activeOfficePhoto]?.alt || 'Sede da Advocacia Nicolau'}
-                  className="w-full h-full object-cover object-center transition-opacity duration-300"
+                  src={activePhoto.src}
+                  alt={activePhoto.alt}
+                  className={`w-full h-full object-cover ${activePhoto.objectPosition} transition-all duration-300`}
                   loading="lazy"
                   decoding="async"
                   onError={(e) => {
@@ -52,8 +80,8 @@ export const About: React.FC<AboutProps> = ({ contactInfo = initialContactInfo }
                 />
               </div>
 
-              {/* Dual-Photo Selector Strip displaying both office images */}
-              <div className="grid grid-cols-2 gap-2.5 p-3 bg-[#100C09] border-t border-[#B89554]/20">
+              {/* Multi-Photo Selector Strip displaying all office environments */}
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 p-3 bg-[#100C09] border-t border-[#B89554]/20">
                 {officePhotos.map((photo, idx) => {
                   const isSelected = activeOfficePhoto === idx;
                   return (
@@ -61,17 +89,19 @@ export const About: React.FC<AboutProps> = ({ contactInfo = initialContactInfo }
                       key={photo.caption}
                       type="button"
                       onClick={() => setActiveOfficePhoto(idx)}
+                      title={photo.caption}
+                      aria-label={`Ver foto: ${photo.caption}`}
                       className={`group relative overflow-hidden rounded-lg border transition-all text-left cursor-pointer focus-visible:outline-none ${
                         isSelected
-                          ? 'border-[#D6B779] ring-1 ring-[#D6B779]/60 opacity-100'
-                          : 'border-[#B89554]/25 opacity-75 hover:opacity-100 hover:border-[#B89554]/60'
+                          ? 'border-[#D6B779] ring-1 ring-[#D6B779]/70 opacity-100'
+                          : 'border-[#B89554]/25 opacity-70 hover:opacity-100 hover:border-[#B89554]/60'
                       }`}
                     >
-                      <div className="aspect-[16/9] w-full overflow-hidden bg-[#17130F]">
+                      <div className="aspect-[4/3] w-full overflow-hidden bg-[#17130F]">
                         <img
                           src={photo.src}
                           alt={photo.alt}
-                          className="w-full h-full object-cover object-center group-hover:scale-[1.03] transition-transform duration-300"
+                          className={`w-full h-full object-cover ${photo.objectPosition} group-hover:scale-[1.05] transition-transform duration-300`}
                           loading="lazy"
                           decoding="async"
                         />
@@ -85,7 +115,7 @@ export const About: React.FC<AboutProps> = ({ contactInfo = initialContactInfo }
                 <div className="flex items-center gap-2 text-xs text-[#FAF8F4]/90 font-normal">
                   <MapPin className="w-3.5 h-3.5 text-[#D6B779] shrink-0" />
                   <span>
-                    {contactInfo.address} · {contactInfo.city}/{contactInfo.state === 'Paraná' ? 'PR' : contactInfo.state}
+                    {activePhoto.caption} · {contactInfo.address}
                   </span>
                 </div>
                 <span
@@ -144,7 +174,7 @@ export const About: React.FC<AboutProps> = ({ contactInfo = initialContactInfo }
                 >
                   1978
                 </span>
-                <span className="text-[11px] text-[#FAF8F4]/70 font-light">
+                <span className="text-xs text-[#FAF8F4]/75 font-light">
                   Ano de fundação
                 </span>
               </div>
@@ -155,8 +185,8 @@ export const About: React.FC<AboutProps> = ({ contactInfo = initialContactInfo }
                 >
                   +45 anos
                 </span>
-                <span className="text-[11px] text-[#FAF8F4]/70 font-light">
-                  De atuação contínua
+                <span className="text-xs text-[#FAF8F4]/75 font-light">
+                  De história
                 </span>
               </div>
               <div>
@@ -164,10 +194,10 @@ export const About: React.FC<AboutProps> = ({ contactInfo = initialContactInfo }
                   className="block text-2xl sm:text-3xl font-normal text-[#D6B779]"
                   style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                 >
-                  OAB/PR
+                  Guarapuava
                 </span>
-                <span className="text-[11px] text-[#FAF8F4]/70 font-light">
-                  Tradição desde nº 7.708
+                <span className="text-xs text-[#FAF8F4]/75 font-light">
+                  Paraná
                 </span>
               </div>
             </div>
