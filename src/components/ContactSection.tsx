@@ -176,6 +176,18 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                     <p className="text-xs text-[#FAF8F4]/60">
                       {contactInfo.city} — {contactInfo.state}, CEP {contactInfo.cep}
                     </p>
+                    <a
+                      href={
+                        contactInfo.googleProfileUrl?.trim() ||
+                        'https://g.page/r/CWaOiasgkK5eEBM/review'
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-2 text-xs text-[#D6B779]/85 hover:text-[#D6B779] underline underline-offset-4 transition-colors font-light"
+                    >
+                      <span>Confira nosso perfil no Google</span>
+                      <ExternalLink className="w-3 h-3 shrink-0" />
+                    </a>
                   </div>
                 </div>
 

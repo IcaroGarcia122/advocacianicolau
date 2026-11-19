@@ -1,7 +1,7 @@
 import React from 'react';
 import { Logo } from './Logo';
 import { ContactInfo } from '../data/officeData';
-import { MessageSquare, Instagram, MapPin, Lock } from 'lucide-react';
+import { MessageSquare, Instagram, MapPin, Lock, ExternalLink } from 'lucide-react';
 
 interface FooterProps {
   contactInfo: ContactInfo;
@@ -121,7 +121,20 @@ export const Footer: React.FC<FooterProps> = ({
             <span className="text-[#FAF8F4]/75">Desde 1978, ao seu lado.</span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <a
+              href={
+                contactInfo.googleProfileUrl?.trim() ||
+                'https://g.page/r/CWaOiasgkK5eEBM/review'
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-[#D6B779]/75 hover:text-[#D6B779] inline-flex items-center gap-1 underline underline-offset-4 transition-colors"
+            >
+              <span>Confira nosso perfil no Google</span>
+              <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+            </a>
+
             {onOpenAdmin && (
               <button
                 onClick={onOpenAdmin}

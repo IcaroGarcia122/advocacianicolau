@@ -77,6 +77,7 @@ export interface ContactInfo {
   workingHours: string;
   googleMapsUrl: string;
   googleMapsPlaceUrl?: string;
+  googleProfileUrl?: string;
 }
 
 export const buildGoogleMapsEmbedUrl = (
@@ -142,6 +143,7 @@ export const initialContactInfo: ContactInfo = {
   googleMapsUrl:
     'https://maps.google.com/maps?q=Advocacia%20Nicolau%2C%20Rua%20Cel.%20Lustosa%2C%201022%20-%20Centro%2C%20Guarapuava%20-%20PR%2C%2085010-060%2C%20Brasil&t=&z=17&ie=UTF8&iwloc=&output=embed',
   googleMapsPlaceUrl: 'https://share.google/YY8BFj1KDYkBx1t9E',
+  googleProfileUrl: 'https://g.page/r/CWaOiasgkK5eEBM/review',
 };
 
 export const lawyers: Lawyer[] = [
